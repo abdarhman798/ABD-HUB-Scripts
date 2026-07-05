@@ -1,0 +1,225 @@
+-- استدعاء الخدمات الأساسية
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService") -- لعمل تأثيرات ظهور واختفاء ناعمة
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-------------------------------------------------
+-- تجهيز واجهة الشاشة (GUI) لشعار ABD HUB والدماء --
+-------------------------------------------------
+local playerGui = player:WaitForChild("PlayerGui")
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BloodUI"
+screenGui.IgnoreGuiInset = true -- لتغطية الشاشة بالكامل
+screenGui.Parent = playerGui
+
+-- خلفية بقع الدماء على الشاشة
+local bloodSplatter = Instance.new("ImageLabel")
+bloodSplatter.Size = UDim2.new(1, 0, 1, 0)
+bloodSplatter.Position = UDim2.new(0, 0, 0, 0)
+bloodSplatter.BackgroundTransparency = 1
+bloodSplatter.Image = "rbxassetid://1326442436" -- ID لصورة دماء واقعية
+bloodSplatter.ImageColor3 = Color3.fromRGB(150, 0, 0)
+bloodSplatter.ImageTransparency = 1 -- نجعلها مخفية في البداية
+bloodSplatter.Parent = screenGui
+
+-- نص ABD HUB
+local abdText = Instance.new("TextLabel")
+abdText.Size = UDim2.new(1, 0, 1, 0)
+abdText.Position = UDim2.new(0, 0, 0, 0)
+abdText.BackgroundTransparency = 1
+abdText.Text = "ABD HUB"
+abdText.Font = Enum.Font.Creepster -- خط مرعب ومزخرف
+abdText.TextSize = 130 -- حجم كبير
+abdText.TextColor3 = Color3.fromRGB(180, 0, 0) -- لون أحمر دموي
+abdText.TextStrokeTransparency = 0
+abdText.TextStrokeColor3 = Color3.fromRGB(30, 0, 0) -- حواف سوداء/حمراء داكنة للنص
+abdText.TextTransparency = 1 -- مخفي في البداية
+abdText.Parent = screenGui
+
+-------------------------------------------------
+-- 1. مرحلة الطيران (أطول من قبل)                --
+-------------------------------------------------
+local bodyVelocity = Instance.new("BodyVelocity")
+bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+bodyVelocity.Velocity = Vector3.new(0, 150, 0) -- سرعة مناسبة لرؤية المشهد
+bodyVelocity.Parent = rootPart
+
+local fire = Instance.new("Fire")
+fire.Size = 12
+fire.Parent = rootPart
+
+local launchSound = Instance.new("Sound")
+launchSound.SoundId = "rbxassetid://288641686"
+launchSound.Volume = 2
+launchSound.Parent = rootPart
+launchSound:Play()
+
+-- انتظار أطول أثناء الطيران
+task.wait(3.5)
+
+-------------------------------------------------
+-- 2. مرحلة الانفجار وتناثر الدماء من الجسم      --
+-------------------------------------------------
+local explosion = Instance.new("Explosion")
+explosion.Position = rootPart.Position
+explosion.BlastRadius = 15
+explosion.BlastPressure = 0
+explosion.Parent = workspace
+
+local deathSound = Instance.new("Sound")
+deathSound.SoundId = "rbxassetid://138186576"
+deathSound.Volume = 5
+deathSound.Parent = workspace
+deathSound:Play()
+
+-- تأثير الدماء المتناثرة (ParticleEmitter) من أعضاء الجسم
+local limbs = {"Torso", "Head", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
+local bloodEmitters = {} -- قائمة للاحتفاظ بالجزيئات لتنظيفها لاحقاً
+for _, limbName in ipairs(limbs) do
+    local limb = character:FindFirstChild(limbName)
+    if limb then
+        local bloodEmitter = Instance.new("ParticleEmitter")
+        bloodEmitter.Texture = "rbxassetid://241513224" -- تأثير قطرات الدم
+        bloodEmitter.Color = ColorSequence.new(Color3.fromRGB(130, 0, 0))
+        bloodEmitter.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 2.5)})
+        bloodEmitter.Lifetime = NumberRange.new(1.5, 3)
+        bloodEmitter.Speed = NumberRange.new(15, 30)
+        bloodEmitter.VelocitySpread = 360 -- تناثر في كل الاتجاهات
+        bloodEmitter.Rate = 250 -- كمية دماء كثيفة
+        bloodEmitter.Parent = limb
+        table.insert(bloodEmitters, bloodEmitter) -- إضافة إلى القائمة
+    end
+end
+
+-- قتل اللاعب
+humanoid.Health = 0
+bodyVelocity:Destroy()
+fire:Destroy()
+
+-------------------------------------------------
+-- 3. تأثيرات الشاشة وظهور الشعار                --
+-------------------------------------------------
+local blur = Instance.new("BlurEffect")
+blur.Size = 30 -- تغبيش قوي
+blur.Parent = Lighting
+
+local colorCorrection = Instance.new("ColorCorrectionEffect")
+colorCorrection.TintColor = Color3.fromRGB(100, 0, 0) -- لون الشاشة أحمر داكن ومرعب
+colorCorrection.Saturation = 0.3
+colorCorrection.Contrast = 0.2
+colorCorrection.Parent = Lighting
+
+-- إظهار الشعار والدماء على الشاشة بنعومة باستخدام TweenService
+local tweenIn = TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+TweenService:Create(abdText, tweenIn, {TextTransparency = 0}):Play()
+TweenService:Create(bloodSplatter, tweenIn, {ImageTransparency = 0.2}):Play()
+
+-------------------------------------------------
+-- 4. إطالة المشهد وتعديل الجثة وتشغيل السكربت --
+-------------------------------------------------
+-- إبقاء مشهد الموت والشعار معروضاً لمدة 6 ثوانٍ
+task.wait(6)
+
+-- <<<<<<<<< بداية التعديل المطلوب >>>>>>>>> --
+-- تعديل مظهر الجثة لتظهر عليها آثار الدم والتعذيب والاحتراق
+print("تطبيق آثار التعذيب والدماء على الجثة...")
+
+local bloodyColor = Color3.fromRGB(150, 0, 0) -- لون أحمر دموي داكن
+local blackColor = Color3.fromRGB(10, 10, 10) -- لون أسود (آثار حروق)
+local bloodDecalId = "rbxassetid://1326442436" -- نفس ID بقع الدماء للـ GUI
+local burnDecalId = "rbxassetid://1347000" -- ID لملصق آثار حروق أو خدوش
+
+-- وظيفة مساعدة لإضافة ملصق
+local function addDecal(part, decalId, color, name)
+    local decal = Instance.new("Decal")
+    decal.Name = name or "Bloodstain"
+    decal.Texture = decalId
+    decal.Color3 = color or bloodyColor
+    decal.Face = Enum.NormalId.Front -- سنضيفه لعدة أوجه
+    decal.Parent = part
+    -- إضافة ملصقات إضافية لأوجه أخرى
+    for _, face in ipairs({Enum.NormalId.Back, Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right}) do
+        local d = decal:Clone()
+        d.Face = face
+        d.Parent = part
+    end
+end
+
+-- تعديل أجزاء الجسم الرئيسية
+for _, limbName in ipairs(limbs) do
+    local limb = character:FindFirstChild(limbName)
+    if limb then
+        -- تغيير لون البشرة إلى دموي
+        if limb:IsA("BasePart") and limbName ~= "Head" then
+            limb.Color = bloodyColor
+        elseif limbName == "Head" and limb:IsA("BasePart") then
+            -- تعديل الرأس بشكل خاص (لون الوجه)
+            limb.Color = bloodyColor
+            local faceDecal = limb:FindFirstChild("FaceDecal") -- محاولة العثور على ملصق الوجه الأصلي
+            if faceDecal then
+                faceDecal.Color3 = bloodyColor -- جعل الوجه أحمر
+                faceDecal.Transparency = 0.5 -- جعله شفافاً قليلاً لتبدو الندبات
+            end
+        end
+
+        -- إضافة ملصقات دم وحروق
+        addDecal(limb, bloodDecalId, bloodyColor, "Bloodstain_Limb")
+        addDecal(limb, burnDecalId, blackColor, "BurnMark_Limb")
+    end
+end
+
+-- تعديل الملابس
+local shirt = character:FindFirstChildOfClass("Shirt")
+local pants = character:FindFirstChildOfClass("Pants")
+if shirt then
+    shirt.Color3 = bloodyColor
+    addDecal(shirt.Parent:FindFirstChild("Torso"), bloodDecalId, bloodyColor, "Bloodstain_Shirt") -- إضافة ملصق فوق الملابس (تحتاج إلى تطبيق الملصق على الجزء الأساسي)
+end
+if pants then
+    pants.Color3 = bloodyColor
+    addDecal(pants.Parent:FindFirstChild("Torso"), burnDecalId, blackColor, "BurnMark_Pants")
+end
+
+-- تعديل الإكسسوارات (محاولة جعلها تبدو مكسورة)
+for _, obj in ipairs(character:GetChildren()) do
+    if obj:IsA("Accessory") then
+        local handle = obj:FindFirstChild("Handle")
+        if handle and handle:IsA("BasePart") then
+            handle.Color = bloodyColor
+            addDecal(handle, bloodDecalId, bloodyColor, "Bloodstain_Accessory")
+            handle.Material = Enum.Material.CorrodedMetal -- جعل المعدن متآكلاً
+        end
+    end
+end
+
+-- <<<<<<<<< نهاية التعديل المطلوب >>>>>>>>> --
+
+-- إخفاء التأثيرات بنعومة لكي لا تنصدم العين عند الرسباون
+local tweenOut = TweenInfo.new(1.5, Enum.EasingStyle.Linear)
+TweenService:Create(blur, tweenOut, {Size = 0}):Play()
+TweenService:Create(colorCorrection, tweenOut, {TintColor = Color3.fromRGB(255, 255, 255), Saturation = 0, Contrast = 0}):Play()
+TweenService:Create(abdText, tweenOut, {TextTransparency = 1}):Play()
+TweenService:Create(bloodSplatter, tweenOut, {ImageTransparency = 1}):Play()
+
+task.wait(1.5) -- انتظار حتى يختفي كل شيء بالكامل
+
+-- تنظيف الشاشة من الإضافات
+blur:Destroy()
+colorCorrection:Destroy()
+screenGui:Destroy()
+
+-- تنظيف جزيئات الدم المتبقية
+for _, emitter in ipairs(bloodEmitters) do
+    if emitter and emitter.Parent then
+        emitter:Destroy()
+    end
+end
+
+-- 5. تشغيل السكربت الخاص بك أخيراً
+loadstring(game:HttpGet("https://raw.githubusercontent.com/abdarhman798/ABD-HUB-Scripts/refs/heads/main/obfuscated_script-1783262780943.lua.txt"))()
+
