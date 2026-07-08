@@ -1,0 +1,970 @@
+-- [[ 👑 ABOUD CHAT SYSTEM - RED & BLACK THEME V4 (PRO MAX - WEBSOCKET EDITION) 👑 ]] --
+
+if getgenv().AboudChatLoaded then return end
+getgenv().AboudChatLoaded = true
+
+if not WebSocket or not WebSocket.connect then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "⚠️ تحذير",
+        Text = "المشغل الخاص بك لا يدعم WebSocket، الشات لن يعمل.",
+        Duration = 7
+    })
+    return
+end
+
+local LP = game:GetService("Players").LocalPlayer
+local TS = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
+
+local HTTP_REQ = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+
+local SafeFont = Enum.Font.SourceSansBold
+local secretTag = " \226\128\142\226\128\139" 
+
+local WS_URL = "wss://free.blr2.piesocket.com/v3/1?api_key=XmHvzh8q4lrmwsYhF7aTSyOyRCoUv1L1YoitkRSF&notify_self=1"
+local Success, Socket = pcall(function() return WebSocket.connect(WS_URL) end)
+
+if not Success or not Socket then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "❌ خطأ بالاتصال",
+        Text = "لم يتمكن السكربت من الاتصال بسيرفر الشات.",
+        Duration = 5
+    })
+    return
+end
+
+pcall(function() game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false) end)
+
+-- [ إعدادات اللاعب والأوامر الجديدة ]
+local ActiveUsers = {}
+local SelectedUsers = {}
+local PlayersInGroups = {} 
+local WhisperTarget = nil
+local SpamMuteEnd = 0 
+local ActiveMessages = {}
+
+local CustomName = LP.Name
+local RainbowName = false
+local ZombieFont = false
+local IgnoreInvites = false
+local HideNotifications = false
+
+local GroupState = {
+    Active = false,
+    Name = "",
+    Owner = "",
+    Admins = {},
+    Members = {},
+    Mutes = {}
+}
+
+local function PlaySound(id, vol)
+    pcall(function()
+        local s = Instance.new("Sound", game:GetService("CoreGui"))
+        s.SoundId = id; s.Volume = vol or 1; s:Play()
+        game:GetService("Debris"):AddItem(s, 4)
+    end)
+end
+
+local ChatGui = Instance.new("ScreenGui")
+pcall(function() ChatGui.Parent = CoreGui end)
+if not ChatGui.Parent then ChatGui.Parent = LP:WaitForChild("PlayerGui") end
+ChatGui.Name = "AboudCustomChat"
+ChatGui.ResetOnSpawn = false
+ChatGui.IgnoreGuiInset = true
+
+local Main = Instance.new("Frame", ChatGui)
+Main.AnchorPoint = Vector2.new(0.5, 0.5); Main.Position = UDim2.new(1, -210, 0.5, 0); Main.Size = UDim2.new(0, 0, 0, 0)
+Main.BackgroundColor3 = Color3.fromRGB(15, 0, 0); Main.Active = true; Main.Draggable = true; Main.ClipsDescendants = true
+Instance.new("UICorner", Main); Instance.new("UIStroke", Main).Color = Color3.fromRGB(200, 0, 0)
+
+local TitleBar = Instance.new("Frame", Main)
+TitleBar.Size = UDim2.new(1, 0, 0, 40); TitleBar.BackgroundColor3 = Color3.fromRGB(25, 0, 0)
+Instance.new("UICorner", TitleBar)
+
+local TitleLabel = Instance.new("TextLabel", TitleBar)
+TitleLabel.Size = UDim2.new(1, -100, 1, 0); TitleLabel.BackgroundTransparency = 1; TitleLabel.Text = "👑 ABOUD CHAT" 
+TitleLabel.TextColor3 = Color3.fromRGB(200, 0, 0); TitleLabel.Font = SafeFont; TitleLabel.TextSize = 18
+
+local TabGeneral = Instance.new("TextButton", TitleBar)
+TabGeneral.Size = UDim2.new(0, 30, 0, 30); TabGeneral.Position = UDim2.new(1, -95, 0, 5)
+TabGeneral.BackgroundTransparency = 1; TabGeneral.Text = "💬"; TabGeneral.TextSize = 18
+
+local TabGroup = Instance.new("TextButton", TitleBar)
+TabGroup.Size = UDim2.new(0, 30, 0, 30); TabGroup.Position = UDim2.new(1, -65, 0, 5)
+TabGroup.BackgroundTransparency = 1; TabGroup.Text = "👥"; TabGroup.TextSize = 18; TabGroup.Visible = false 
+
+local TabSettings = Instance.new("TextButton", TitleBar)
+TabSettings.Size = UDim2.new(0, 30, 0, 30); TabSettings.Position = UDim2.new(1, -35, 0, 5)
+TabSettings.BackgroundTransparency = 1; TabSettings.Text = "⚙️"; TabSettings.TextSize = 18
+
+local GeneralArea = Instance.new("Frame", Main)
+GeneralArea.Size = UDim2.new(1, 0, 1, -40); GeneralArea.Position = UDim2.new(0, 0, 0, 40); GeneralArea.BackgroundTransparency = 1
+
+local GroupArea = Instance.new("Frame", Main)
+GroupArea.Size = UDim2.new(1, 0, 1, -40); GroupArea.Position = UDim2.new(0, 0, 0, 40); GroupArea.BackgroundTransparency = 1; GroupArea.Visible = false
+
+local SettingsArea = Instance.new("Frame", Main)
+SettingsArea.Size = UDim2.new(1, 0, 1, -40); SettingsArea.Position = UDim2.new(0, 0, 0, 40); SettingsArea.BackgroundColor3 = Color3.fromRGB(15, 0, 0); SettingsArea.Visible = false
+
+local function SwitchTab(tabName)
+    PlaySound("rbxassetid://6895079853", 0.5)
+    GeneralArea.Visible = (tabName == "General"); GroupArea.Visible = (tabName == "Group"); SettingsArea.Visible = (tabName == "Settings")
+end
+TabGeneral.MouseButton1Click:Connect(function() SwitchTab("General") end)
+TabGroup.MouseButton1Click:Connect(function() SwitchTab("Group") end)
+TabSettings.MouseButton1Click:Connect(function() SwitchTab("Settings") end)
+
+local function SetupChatArea(parentArea, isGroup)
+    if isGroup then
+        local GLabel = Instance.new("TextLabel", parentArea)
+        GLabel.Size = UDim2.new(1, 0, 0, 25); GLabel.BackgroundTransparency = 1; GLabel.Text = "أنت لست في مجموعة حالياً"
+        GLabel.TextColor3 = Color3.fromRGB(150, 150, 150); GLabel.Font = SafeFont; GLabel.TextSize = 14; GLabel.Name = "GroupStatus"
+    end
+    local Scroll = Instance.new("ScrollingFrame", parentArea)
+    Scroll.Size = UDim2.new(1, -20, 1, isGroup and -75 or -50); Scroll.Position = UDim2.new(0, 10, 0, isGroup and 25 or 5)
+    Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = 3; Scroll.ScrollBarImageColor3 = Color3.fromRGB(200, 0, 0); Scroll.Name = "ChatScroll"
+    local Layout = Instance.new("UIListLayout", Scroll); Layout.Padding = UDim.new(0, 5)
+    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Scroll.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 10) end)
+
+    local Input = Instance.new("TextBox", parentArea)
+    Input.Size = UDim2.new(1, -90, 0, 35); Input.Position = UDim2.new(0, 10, 1, -40); Input.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
+    Input.TextColor3 = Color3.new(1, 1, 1); Input.Text = ""; Input.PlaceholderText = isGroup and "رسالة للمجموعة..." or "رسالة للعام..."
+    Input.Font = SafeFont; Input.TextSize = 14; Input.TextXAlignment = Enum.TextXAlignment.Left; Input.Name = "InputBox"; Input.ClearTextOnFocus = false
+    Instance.new("UIPadding", Input).PaddingLeft = UDim.new(0, 10); Instance.new("UICorner", Input)
+
+    local Btn = Instance.new("TextButton", parentArea)
+    Btn.Size = UDim2.new(0, 70, 0, 35); Btn.Position = UDim2.new(1, -80, 1, -40); Btn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    Btn.TextColor3 = Color3.new(1, 1, 1); Btn.Font = SafeFont; Btn.TextSize = 14; Btn.Text = "إرسال"; Btn.Name = "SendBtn"
+    Instance.new("UICorner", Btn)
+    return Scroll, Input, Btn
+end
+
+local GenScroll, GenInput, GenSendBtn = SetupChatArea(GeneralArea, false)
+local GrpScroll, GrpInput, GrpSendBtn = SetupChatArea(GroupArea, true)
+
+local CancelWhisperBtn = Instance.new("TextButton", GeneralArea)
+CancelWhisperBtn.Size = UDim2.new(0, 20, 0, 20); CancelWhisperBtn.Position = UDim2.new(0, -5, 1, -45); CancelWhisperBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+CancelWhisperBtn.TextColor3 = Color3.new(1,1,1); CancelWhisperBtn.Text = "X"; CancelWhisperBtn.Visible = false
+Instance.new("UICorner", CancelWhisperBtn).CornerRadius = UDim.new(1,0)
+
+-- =========================================================
+-- [ تصميم الإعدادات الجديد والمرتب بالكامل (PRO MAX) ]
+-- =========================================================
+
+local SetScroll = Instance.new("ScrollingFrame", SettingsArea)
+SetScroll.Size = UDim2.new(1, 0, 1, 0); SetScroll.BackgroundTransparency = 1; SetScroll.ScrollBarThickness = 2
+local SetLayout = Instance.new("UIListLayout", SetScroll)
+SetLayout.Padding = UDim.new(0, 12); SetLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local SetPad = Instance.new("UIPadding", SetScroll)
+SetPad.PaddingTop = UDim.new(0, 10); SetPad.PaddingBottom = UDim.new(0, 10)
+SetLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() SetScroll.CanvasSize = UDim2.new(0, 0, 0, SetLayout.AbsoluteContentSize.Y + 20) end)
+
+local function CreateSectionTitle(txt)
+    local l = Instance.new("TextLabel", SetScroll)
+    l.Size = UDim2.new(1, -10, 0, 20); l.BackgroundTransparency = 1; l.Text = "  " .. txt; l.TextColor3 = Color3.fromRGB(200, 50, 50)
+    l.Font = SafeFont; l.TextSize = 16; l.TextXAlignment = Enum.TextXAlignment.Left
+    local line = Instance.new("Frame", l); line.Size = UDim2.new(1, 0, 0, 1); line.Position = UDim2.new(0, 0, 1, 2); line.BackgroundColor3 = Color3.fromRGB(100, 20, 20); line.BorderSizePixel = 0
+end
+
+CreateSectionTitle("⚙️ إعدادات عامة")
+
+local DndToggleBtn = Instance.new("TextButton", SetScroll)
+DndToggleBtn.Size = UDim2.new(1, -10, 0, 35); DndToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+DndToggleBtn.TextColor3 = Color3.new(1, 1, 1); DndToggleBtn.Font = SafeFont; DndToggleBtn.TextSize = 14; DndToggleBtn.Text = "🔔 رفض الدعوات تلقائياً: معطل"
+Instance.new("UICorner", DndToggleBtn)
+DndToggleBtn.MouseButton1Click:Connect(function()
+    IgnoreInvites = not IgnoreInvites
+    DndToggleBtn.Text = IgnoreInvites and "🔕 رفض الدعوات تلقائياً: مفعل" or "🔔 رفض الدعوات تلقائياً: معطل"
+    DndToggleBtn.BackgroundColor3 = IgnoreInvites and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(0, 100, 0)
+end)
+
+local NotifToggleBtn = Instance.new("TextButton", SetScroll)
+NotifToggleBtn.Size = UDim2.new(1, -10, 0, 35); NotifToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+NotifToggleBtn.TextColor3 = Color3.new(1, 1, 1); NotifToggleBtn.Font = SafeFont; NotifToggleBtn.TextSize = 14; NotifToggleBtn.Text = "🔔 إخفاء الإشعارات المنبثقة: معطل"
+Instance.new("UICorner", NotifToggleBtn)
+NotifToggleBtn.MouseButton1Click:Connect(function()
+    HideNotifications = not HideNotifications
+    NotifToggleBtn.Text = HideNotifications and "🔕 إخفاء الإشعارات المنبثقة: مفعل" or "🔔 إخفاء الإشعارات المنبثقة: معطل"
+    NotifToggleBtn.BackgroundColor3 = HideNotifications and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(0, 100, 0)
+end)
+
+CreateSectionTitle("📡 الرادار واللاعبين")
+
+local RefreshBtn = Instance.new("TextButton", SetScroll)
+RefreshBtn.Size = UDim2.new(1, -10, 0, 35); RefreshBtn.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+RefreshBtn.TextColor3 = Color3.new(1, 1, 1); RefreshBtn.Font = SafeFont; RefreshBtn.TextSize = 14; RefreshBtn.Text = "🔄 تحديث الرادار"
+Instance.new("UICorner", RefreshBtn); Instance.new("UIStroke", RefreshBtn).Color = Color3.fromRGB(200, 0, 0)
+
+local UsersContainer = Instance.new("Frame", SetScroll)
+UsersContainer.Size = UDim2.new(1, -10, 0, 120); UsersContainer.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
+Instance.new("UICorner", UsersContainer); Instance.new("UIStroke", UsersContainer).Color = Color3.fromRGB(100, 0, 0)
+
+local UsersScroll = Instance.new("ScrollingFrame", UsersContainer)
+UsersScroll.Size = UDim2.new(1, -10, 1, -10); UsersScroll.Position = UDim2.new(0, 5, 0, 5)
+UsersScroll.BackgroundTransparency = 1; UsersScroll.ScrollBarThickness = 3; UsersScroll.ScrollBarImageColor3 = Color3.fromRGB(200, 0, 0)
+local UsersLayout = Instance.new("UIListLayout", UsersScroll); UsersLayout.Padding = UDim.new(0, 5)
+UsersLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() UsersScroll.CanvasSize = UDim2.new(0, 0, 0, UsersLayout.AbsoluteContentSize.Y) end)
+
+CreateSectionTitle("👥 إدارة المجموعات")
+
+local SettingsCreateFrame = Instance.new("Frame", SetScroll)
+SettingsCreateFrame.Size = UDim2.new(1, -10, 0, 80); SettingsCreateFrame.BackgroundTransparency = 1
+
+local GroupNameInput = Instance.new("TextBox", SettingsCreateFrame)
+GroupNameInput.Size = UDim2.new(1, 0, 0, 35); GroupNameInput.Position = UDim2.new(0, 0, 0, 0); GroupNameInput.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
+GroupNameInput.TextColor3 = Color3.new(1, 1, 1); GroupNameInput.Text = ""; GroupNameInput.PlaceholderText = "اسم المجموعة..."; GroupNameInput.Font = SafeFont; GroupNameInput.TextSize = 14
+Instance.new("UICorner", GroupNameInput); Instance.new("UIStroke", GroupNameInput).Color = Color3.fromRGB(100, 0, 0)
+
+local InviteBtn = Instance.new("TextButton", SettingsCreateFrame)
+InviteBtn.Size = UDim2.new(1, 0, 0, 35); InviteBtn.Position = UDim2.new(0, 0, 0, 45); InviteBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+InviteBtn.TextColor3 = Color3.new(1, 1, 1); InviteBtn.Font = SafeFont; InviteBtn.TextSize = 14; InviteBtn.Text = "إرسال الدعوات وإنشاء المجموعة 📩"
+Instance.new("UICorner", InviteBtn)
+
+local GroupManageFrame = Instance.new("Frame", SetScroll)
+GroupManageFrame.Size = UDim2.new(1, -10, 0, 200); GroupManageFrame.BackgroundTransparency = 1; GroupManageFrame.Visible = false
+
+local GrpInfoLabel = Instance.new("TextLabel", GroupManageFrame)
+GrpInfoLabel.Size = UDim2.new(1, 0, 0, 20); GrpInfoLabel.Position = UDim2.new(0, 0, 0, 0); GrpInfoLabel.BackgroundTransparency = 1
+GrpInfoLabel.TextColor3 = Color3.fromRGB(200, 200, 0); GrpInfoLabel.Font = SafeFont; GrpInfoLabel.TextSize = 14
+
+local InviteMoreBtn = Instance.new("TextButton", GroupManageFrame)
+InviteMoreBtn.Size = UDim2.new(1, 0, 0, 30); InviteMoreBtn.Position = UDim2.new(0, 0, 0, 25); InviteMoreBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+InviteMoreBtn.TextColor3 = Color3.new(1, 1, 1); InviteMoreBtn.Font = SafeFont; InviteMoreBtn.TextSize = 14; InviteMoreBtn.Text = "➕ دعوة المحددين بالرادار للمجموعة"
+Instance.new("UICorner", InviteMoreBtn)
+
+local LeaveGrpBtn = Instance.new("TextButton", GroupManageFrame)
+LeaveGrpBtn.Size = UDim2.new(1, 0, 0, 30); LeaveGrpBtn.Position = UDim2.new(0, 0, 0, 60); LeaveGrpBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+LeaveGrpBtn.TextColor3 = Color3.new(1, 1, 1); LeaveGrpBtn.Font = SafeFont; LeaveGrpBtn.TextSize = 14; LeaveGrpBtn.Text = "🚪 الخروج من المجموعة"
+Instance.new("UICorner", LeaveGrpBtn)
+
+local GrpMembersContainer = Instance.new("Frame", GroupManageFrame)
+GrpMembersContainer.Size = UDim2.new(1, 0, 0, 100); GrpMembersContainer.Position = UDim2.new(0, 0, 0, 100); GrpMembersContainer.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
+Instance.new("UICorner", GrpMembersContainer); Instance.new("UIStroke", GrpMembersContainer).Color = Color3.fromRGB(100, 0, 0)
+
+local GrpMembersScroll = Instance.new("ScrollingFrame", GrpMembersContainer)
+GrpMembersScroll.Size = UDim2.new(1, -10, 1, -10); GrpMembersScroll.Position = UDim2.new(0, 5, 0, 5); GrpMembersScroll.BackgroundTransparency = 1
+GrpMembersScroll.ScrollBarThickness = 3; GrpMembersScroll.ScrollBarImageColor3 = Color3.fromRGB(200, 0, 0)
+local GrpMembersLayout = Instance.new("UIListLayout", GrpMembersScroll); GrpMembersLayout.Padding = UDim.new(0, 5)
+GrpMembersLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() GrpMembersScroll.CanvasSize = UDim2.new(0, 0, 0, GrpMembersLayout.AbsoluteContentSize.Y) end)
+-- =========================================================
+
+local InviteDialog = Instance.new("Frame", ChatGui)
+InviteDialog.Size = UDim2.new(0, 300, 0, 150); InviteDialog.Position = UDim2.new(0.5, -150, 0.5, -75); InviteDialog.BackgroundColor3 = Color3.fromRGB(20, 0, 0); InviteDialog.Visible = false; InviteDialog.ZIndex = 100
+Instance.new("UICorner", InviteDialog); Instance.new("UIStroke", InviteDialog).Color = Color3.fromRGB(255, 0, 0)
+local InvMsgLabel = Instance.new("TextLabel", InviteDialog)
+InvMsgLabel.Size = UDim2.new(1, -20, 0, 80); InvMsgLabel.Position = UDim2.new(0, 10, 0, 10); InvMsgLabel.BackgroundTransparency = 1; InvMsgLabel.TextColor3 = Color3.new(1, 1, 1); InvMsgLabel.Font = SafeFont; InvMsgLabel.TextSize = 18; InvMsgLabel.TextScaled = true; InvMsgLabel.ZIndex = 101
+local AccBtn = Instance.new("TextButton", InviteDialog)
+AccBtn.Size = UDim2.new(0, 120, 0, 40); AccBtn.Position = UDim2.new(0, 15, 1, -50); AccBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 0); AccBtn.TextColor3 = Color3.new(1, 1, 1); AccBtn.Font = SafeFont; AccBtn.TextSize = 18; AccBtn.Text = "✅ قبول"; AccBtn.ZIndex = 101; Instance.new("UICorner", AccBtn)
+local DecBtn = Instance.new("TextButton", InviteDialog)
+DecBtn.Size = UDim2.new(0, 120, 0, 40); DecBtn.Position = UDim2.new(1, -135, 1, -50); DecBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0); DecBtn.TextColor3 = Color3.new(1, 1, 1); DecBtn.Font = SafeFont; DecBtn.TextSize = 18; DecBtn.Text = "❌ رفض"; DecBtn.ZIndex = 101; Instance.new("UICorner", DecBtn)
+
+local PlayerChatActionMenu = Instance.new("Frame", ChatGui)
+PlayerChatActionMenu.Size = UDim2.new(0, 180, 0, 170); PlayerChatActionMenu.Position = UDim2.new(0.5, -90, 0.5, -85); PlayerChatActionMenu.BackgroundColor3 = Color3.fromRGB(20, 20, 30); PlayerChatActionMenu.Visible = false; PlayerChatActionMenu.ZIndex = 300
+Instance.new("UICorner", PlayerChatActionMenu); Instance.new("UIStroke", PlayerChatActionMenu).Color = Color3.fromRGB(100, 100, 255)
+local PCALayout = Instance.new("UIListLayout", PlayerChatActionMenu); PCALayout.Padding = UDim.new(0, 5); PCALayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+local PCA_Title = Instance.new("TextLabel", PlayerChatActionMenu)
+PCA_Title.Size = UDim2.new(1, 0, 0, 30); PCA_Title.BackgroundTransparency = 1; PCA_Title.TextColor3 = Color3.new(1, 1, 1); PCA_Title.Font = SafeFont; PCA_Title.TextSize = 16; PCA_Title.ZIndex = 301
+local EditMsgBtn = Instance.new("TextButton", PlayerChatActionMenu)
+EditMsgBtn.Size = UDim2.new(1, -10, 0, 30); EditMsgBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0); EditMsgBtn.TextColor3 = Color3.new(1, 1, 1); EditMsgBtn.Font = SafeFont; EditMsgBtn.TextSize = 14; EditMsgBtn.Text = "✏️ تعديل رسالتي"; EditMsgBtn.ZIndex = 301; Instance.new("UICorner", EditMsgBtn)
+local CopyMsgBtn = Instance.new("TextButton", PlayerChatActionMenu)
+CopyMsgBtn.Size = UDim2.new(1, -10, 0, 30); CopyMsgBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100); CopyMsgBtn.TextColor3 = Color3.new(1, 1, 1); CopyMsgBtn.Font = SafeFont; CopyMsgBtn.TextSize = 14; CopyMsgBtn.Text = "📋 نسخ الرسالة"; CopyMsgBtn.ZIndex = 301; Instance.new("UICorner", CopyMsgBtn)
+local WhisperPlayerBtn = Instance.new("TextButton", PlayerChatActionMenu)
+WhisperPlayerBtn.Size = UDim2.new(1, -10, 0, 30); WhisperPlayerBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 150); WhisperPlayerBtn.TextColor3 = Color3.new(1, 1, 1); WhisperPlayerBtn.Font = SafeFont; WhisperPlayerBtn.TextSize = 14; WhisperPlayerBtn.Text = "همس (خاص)"; WhisperPlayerBtn.ZIndex = 301; Instance.new("UICorner", WhisperPlayerBtn)
+local ReportPlayerBtn = Instance.new("TextButton", PlayerChatActionMenu)
+ReportPlayerBtn.Size = UDim2.new(1, -10, 0, 30); ReportPlayerBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 0); ReportPlayerBtn.TextColor3 = Color3.new(1, 1, 1); ReportPlayerBtn.Font = SafeFont; ReportPlayerBtn.TextSize = 14; ReportPlayerBtn.Text = "إبلاغ (Report)"; ReportPlayerBtn.ZIndex = 301; Instance.new("UICorner", ReportPlayerBtn)
+local ClosePCABtn = Instance.new("TextButton", PlayerChatActionMenu)
+ClosePCABtn.Size = UDim2.new(1, -10, 0, 25); ClosePCABtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); ClosePCABtn.TextColor3 = Color3.new(1, 1, 1); ClosePCABtn.Font = SafeFont; ClosePCABtn.TextSize = 12; ClosePCABtn.Text = "إلغاء"; ClosePCABtn.ZIndex = 301; Instance.new("UICorner", ClosePCABtn)
+
+local EditDialog = Instance.new("Frame", ChatGui)
+EditDialog.Size = UDim2.new(0, 300, 0, 150); EditDialog.Position = UDim2.new(0.5, -150, 0.5, -75); EditDialog.BackgroundColor3 = Color3.fromRGB(20, 20, 40); EditDialog.Visible = false; EditDialog.ZIndex = 400
+Instance.new("UICorner", EditDialog); Instance.new("UIStroke", EditDialog).Color = Color3.fromRGB(0, 255, 0)
+local EditTitle = Instance.new("TextLabel", EditDialog)
+EditTitle.Size = UDim2.new(1, 0, 0, 30); EditTitle.BackgroundTransparency = 1; EditTitle.TextColor3 = Color3.new(1, 1, 1); EditTitle.Font = SafeFont; EditTitle.TextSize = 16; EditTitle.Text = "تعديل رسالتك"; EditTitle.ZIndex = 401
+local EditInput = Instance.new("TextBox", EditDialog)
+EditInput.Size = UDim2.new(1, -20, 0, 50); EditInput.Position = UDim2.new(0, 10, 0, 35); EditInput.BackgroundColor3 = Color3.fromRGB(10, 10, 20); EditInput.TextColor3 = Color3.new(1, 1, 1); EditInput.Font = SafeFont; EditInput.TextSize = 14; EditInput.ClearTextOnFocus = false; EditInput.MultiLine = true; EditInput.ZIndex = 401; Instance.new("UICorner", EditInput)
+local SubmitEditBtn = Instance.new("TextButton", EditDialog)
+SubmitEditBtn.Size = UDim2.new(0, 120, 0, 40); SubmitEditBtn.Position = UDim2.new(0, 20, 1, -50); SubmitEditBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0); SubmitEditBtn.TextColor3 = Color3.new(1, 1, 1); SubmitEditBtn.Font = SafeFont; SubmitEditBtn.TextSize = 16; SubmitEditBtn.Text = "حفظ"; SubmitEditBtn.ZIndex = 401; Instance.new("UICorner", SubmitEditBtn)
+local CancelEditBtn = Instance.new("TextButton", EditDialog)
+CancelEditBtn.Size = UDim2.new(0, 120, 0, 40); CancelEditBtn.Position = UDim2.new(1, -140, 1, -50); CancelEditBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); CancelEditBtn.TextColor3 = Color3.new(1, 1, 1); CancelEditBtn.Font = SafeFont; CancelEditBtn.TextSize = 16; CancelEditBtn.Text = "إلغاء"; CancelEditBtn.ZIndex = 401; Instance.new("UICorner", CancelEditBtn)
+
+local ReportDialog = Instance.new("Frame", ChatGui)
+ReportDialog.Size = UDim2.new(0, 300, 0, 200); ReportDialog.Position = UDim2.new(0.5, -150, 0.5, -100); ReportDialog.BackgroundColor3 = Color3.fromRGB(25, 0, 0); ReportDialog.Visible = false; ReportDialog.ZIndex = 400
+Instance.new("UICorner", ReportDialog); Instance.new("UIStroke", ReportDialog).Color = Color3.fromRGB(255, 0, 0)
+local RepTitle = Instance.new("TextLabel", ReportDialog)
+RepTitle.Size = UDim2.new(1, 0, 0, 30); RepTitle.BackgroundTransparency = 1; RepTitle.TextColor3 = Color3.new(1, 1, 1); RepTitle.Font = SafeFont; RepTitle.TextSize = 16; RepTitle.Text = "إبلاغ عن لاعب"; RepTitle.ZIndex = 401
+local RepInput = Instance.new("TextBox", ReportDialog)
+RepInput.Size = UDim2.new(1, -20, 0, 100); RepInput.Position = UDim2.new(0, 10, 0, 35); RepInput.BackgroundColor3 = Color3.fromRGB(10, 0, 0); RepInput.TextColor3 = Color3.new(1, 1, 1); RepInput.PlaceholderText = "اكتب مشكلتك مع هذا اللاعب هنا..."; RepInput.Font = SafeFont; RepInput.TextSize = 14; RepInput.TextXAlignment = Enum.TextXAlignment.Left; RepInput.TextYAlignment = Enum.TextYAlignment.Top; RepInput.ClearTextOnFocus = false; RepInput.MultiLine = true; RepInput.ZIndex = 401; Instance.new("UICorner", RepInput)
+local SubmitRepBtn = Instance.new("TextButton", ReportDialog)
+SubmitRepBtn.Size = UDim2.new(0, 120, 0, 40); SubmitRepBtn.Position = UDim2.new(0, 20, 1, -50); SubmitRepBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0); SubmitRepBtn.TextColor3 = Color3.new(1, 1, 1); SubmitRepBtn.Font = SafeFont; SubmitRepBtn.TextSize = 16; SubmitRepBtn.Text = "إرسال البلاغ"; SubmitRepBtn.ZIndex = 401; Instance.new("UICorner", SubmitRepBtn)
+local CancelRepBtn = Instance.new("TextButton", ReportDialog)
+CancelRepBtn.Size = UDim2.new(0, 120, 0, 40); CancelRepBtn.Position = UDim2.new(1, -140, 1, -50); CancelRepBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); CancelRepBtn.TextColor3 = Color3.new(1, 1, 1); CancelRepBtn.Font = SafeFont; CancelRepBtn.TextSize = 16; CancelRepBtn.Text = "إلغاء"; CancelRepBtn.ZIndex = 401; Instance.new("UICorner", CancelRepBtn)
+
+local ActionMenu = Instance.new("Frame", ChatGui)
+ActionMenu.Size = UDim2.new(0, 200, 0, 210); ActionMenu.Position = UDim2.new(0.5, -100, 0.5, -105); ActionMenu.BackgroundColor3 = Color3.fromRGB(25, 0, 0); ActionMenu.Visible = false; ActionMenu.ZIndex = 200
+Instance.new("UICorner", ActionMenu); Instance.new("UIStroke", ActionMenu).Color = Color3.fromRGB(255, 0, 0)
+local ActionTitle = Instance.new("TextLabel", ActionMenu)
+ActionTitle.Size = UDim2.new(1, 0, 0, 30); ActionTitle.BackgroundTransparency = 1; ActionTitle.TextColor3 = Color3.new(1, 1, 1); ActionTitle.Font = SafeFont; ActionTitle.TextSize = 16; ActionTitle.ZIndex = 201
+local AdminToggleBtn = Instance.new("TextButton", ActionMenu)
+AdminToggleBtn.Size = UDim2.new(1, -20, 0, 30); AdminToggleBtn.Position = UDim2.new(0, 10, 0, 35); AdminToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 150); AdminToggleBtn.TextColor3 = Color3.new(1, 1, 1); AdminToggleBtn.Font = SafeFont; AdminToggleBtn.TextSize = 14; AdminToggleBtn.Text = "ترقية/سحب إشراف"; AdminToggleBtn.ZIndex = 201; Instance.new("UICorner", AdminToggleBtn)
+local TransferOwnerBtn = Instance.new("TextButton", ActionMenu)
+TransferOwnerBtn.Size = UDim2.new(1, -20, 0, 30); TransferOwnerBtn.Position = UDim2.new(0, 10, 0, 70); TransferOwnerBtn.BackgroundColor3 = Color3.fromRGB(150, 100, 200); TransferOwnerBtn.TextColor3 = Color3.new(1, 1, 1); TransferOwnerBtn.Font = SafeFont; TransferOwnerBtn.TextSize = 14; TransferOwnerBtn.Text = "نقل الملكية"; TransferOwnerBtn.ZIndex = 201; Instance.new("UICorner", TransferOwnerBtn)
+local KickPlayerBtn = Instance.new("TextButton", ActionMenu)
+KickPlayerBtn.Size = UDim2.new(1, -20, 0, 30); KickPlayerBtn.Position = UDim2.new(0, 10, 0, 105); KickPlayerBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0); KickPlayerBtn.TextColor3 = Color3.new(1, 1, 1); KickPlayerBtn.Font = SafeFont; KickPlayerBtn.TextSize = 14; KickPlayerBtn.Text = "طرد اللاعب"; KickPlayerBtn.ZIndex = 201; Instance.new("UICorner", KickPlayerBtn)
+local MuteOpenBtn = Instance.new("TextButton", ActionMenu)
+MuteOpenBtn.Size = UDim2.new(1, -20, 0, 30); MuteOpenBtn.Position = UDim2.new(0, 10, 0, 140); MuteOpenBtn.BackgroundColor3 = Color3.fromRGB(150, 100, 0); MuteOpenBtn.TextColor3 = Color3.new(1, 1, 1); MuteOpenBtn.Font = SafeFont; MuteOpenBtn.TextSize = 14; MuteOpenBtn.Text = "كتم اللاعب"; MuteOpenBtn.ZIndex = 201; Instance.new("UICorner", MuteOpenBtn)
+local CloseActionBtn = Instance.new("TextButton", ActionMenu)
+CloseActionBtn.Size = UDim2.new(1, -20, 0, 30); CloseActionBtn.Position = UDim2.new(0, 10, 0, 175); CloseActionBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); CloseActionBtn.TextColor3 = Color3.new(1, 1, 1); CloseActionBtn.Font = SafeFont; CloseActionBtn.TextSize = 14; CloseActionBtn.Text = "إغلاق"; CloseActionBtn.ZIndex = 201; Instance.new("UICorner", CloseActionBtn)
+local TargetActionPlayer = ""
+local TargetMessageId = ""
+local TargetMessageRaw = ""
+
+local MuteMenu = Instance.new("Frame", ChatGui)
+MuteMenu.Size = UDim2.new(0, 200, 0, 270); MuteMenu.Position = UDim2.new(0.5, -100, 0.5, -135); MuteMenu.BackgroundColor3 = Color3.fromRGB(30, 10, 0); MuteMenu.Visible = false; MuteMenu.ZIndex = 210
+Instance.new("UICorner", MuteMenu); Instance.new("UIStroke", MuteMenu).Color = Color3.fromRGB(255, 100, 0)
+local MuteTitle = Instance.new("TextLabel", MuteMenu)
+MuteTitle.Size = UDim2.new(1, 0, 0, 30); MuteTitle.BackgroundTransparency = 1; MuteTitle.TextColor3 = Color3.new(1, 1, 1); MuteTitle.Font = SafeFont; MuteTitle.TextSize = 16; MuteTitle.Text = "اختر مدة الكتم"; MuteTitle.ZIndex = 211
+local function createMuteBtn(text, yPos)
+    local btn = Instance.new("TextButton", MuteMenu)
+    btn.Size = UDim2.new(1, -20, 0, 30); btn.Position = UDim2.new(0, 10, 0, yPos); btn.BackgroundColor3 = Color3.fromRGB(150, 50, 0); btn.TextColor3 = Color3.new(1, 1, 1); btn.Font = SafeFont; btn.TextSize = 14; btn.Text = text; btn.ZIndex = 211
+    Instance.new("UICorner", btn); return btn
+end
+local Btn1m = createMuteBtn("دقيقة", 35); local Btn2m = createMuteBtn("دقيقتين", 70); local Btn3m = createMuteBtn("3 دقائق", 105); local Btn1h = createMuteBtn("ساعة", 140); local Btn2h = createMuteBtn("ساعتين", 175); local BtnFor = createMuteBtn("للأبد", 210)
+local CloseMuteBtn = Instance.new("TextButton", MuteMenu)
+CloseMuteBtn.Size = UDim2.new(1, -20, 0, 20); CloseMuteBtn.Position = UDim2.new(0, 10, 0, 245); CloseMuteBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); CloseMuteBtn.TextColor3 = Color3.new(1, 1, 1); CloseMuteBtn.Font = SafeFont; CloseMuteBtn.TextSize = 12; CloseMuteBtn.Text = "رجوع"; CloseMuteBtn.ZIndex = 211; Instance.new("UICorner", CloseMuteBtn)
+
+local NotificationPopup = Instance.new("Frame", ChatGui)
+NotificationPopup.Size = UDim2.new(0, 350, 0, 60); NotificationPopup.Position = UDim2.new(0.5, -175, 1, 100); NotificationPopup.BackgroundColor3 = Color3.fromRGB(15, 0, 30); NotificationPopup.BackgroundTransparency = 0.2; NotificationPopup.ZIndex = 500
+Instance.new("UICorner", NotificationPopup).CornerRadius = UDim.new(0, 10); Instance.new("UIStroke", NotificationPopup).Color = Color3.fromRGB(100, 100, 255)
+local NotifLabel = Instance.new("TextLabel", NotificationPopup)
+NotifLabel.Size = UDim2.new(1, -20, 1, -10); NotifLabel.Position = UDim2.new(0, 10, 0, 5); NotifLabel.BackgroundTransparency = 1; NotifLabel.TextColor3 = Color3.new(1, 1, 1); NotifLabel.Font = SafeFont; NotifLabel.TextSize = 16; NotifLabel.TextWrapped = true; NotifLabel.ZIndex = 501
+
+local function ShowBottomPopup(title, sender, text)
+    if HideNotifications then return end
+    NotifLabel.Text = "[" .. title .. "]\n💬 " .. sender .. ": " .. text
+    TS:Create(NotificationPopup, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -175, 1, -80)}):Play()
+    task.delay(4, function() TS:Create(NotificationPopup, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(0.5, -175, 1, 100)}):Play() end)
+end
+
+local function FireServerMessage(cmd, extraData)
+    if Success and Socket then
+        local payload = {
+            sender = CustomName,
+            realName = LP.Name,
+            content = cmd .. secretTag,
+            r = RainbowName,
+            z = ZombieFont
+        }
+        if extraData then for k,v in pairs(extraData) do payload[k] = v end end
+        pcall(function() Socket:Send(HttpService:JSONEncode(payload)) end)
+    end
+end
+
+local function SendWebhook(target, reason)
+    if not HTTP_REQ then
+        game:GetService("StarterGui"):SetCore("SendNotification", {Title="❌ خطأ", Text="المشغل لا يدعم الويب هوك.", Duration=5})
+        return
+    end
+    local data = {
+        ["embeds"] = {{
+            ["title"] = "🚨 بلاغ جديد من داخل اللعبة",
+            ["color"] = 16711680,
+            ["fields"] = {
+                {["name"] = "المُبلغ (الشاكي)", ["value"] = LP.Name .. " (ID: " .. LP.UserId .. ")", ["inline"] = false},
+                {["name"] = "المُبلغ عنه", ["value"] = target, ["inline"] = false},
+                {["name"] = "المشكلة", ["value"] = reason, ["inline"] = false}
+            },
+            ["footer"] = {["text"] = "Aboud Chat System V4"}
+        }}
+    }
+    pcall(function() HTTP_REQ({Url = "https://discord.com/api/webhooks/1524093059917418596/4lav5FjYZ6ZCiaE3rZrY4vQVmL2Fgxq-5yphcgUhGIgNPI6WTPWMPiD2f-pj3oiGOx0t", Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = HttpService:JSONEncode(data)}) end)
+    game:GetService("StarterGui"):SetCore("SendNotification", {Title="✅ نجاح", Text="تم إرسال البلاغ للإدارة.", Duration=5})
+end
+
+local function BroadcastGroupState()
+    if GroupState.Owner == LP.Name then
+        local json = HttpService:JSONEncode(GroupState)
+        FireServerMessage("/sys_syncgrp|" .. json)
+    end
+end
+
+local function UpdateGroupManageUI()
+    if not GroupState.Active then
+        SettingsCreateFrame.Visible = true; GroupManageFrame.Visible = false
+        return
+    end
+    SettingsCreateFrame.Visible = false; GroupManageFrame.Visible = true
+
+    InviteMoreBtn.Visible = (GroupState.Owner == LP.Name or GroupState.Admins[LP.Name] ~= nil)
+
+    local count = 0
+    for _, v in pairs(GrpMembersScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+    for memberName, joinTime in pairs(GroupState.Members) do
+        count = count + 1
+        local b = Instance.new("TextButton", GrpMembersScroll)
+        b.Size = UDim2.new(1, -10, 0, 30); b.Position = UDim2.new(0, 5, 0, 0)
+        b.BackgroundColor3 = Color3.fromRGB(40, 0, 0); b.TextColor3 = Color3.new(1,1,1); b.Font = SafeFont; b.TextSize = 14
+        Instance.new("UICorner", b)
+        
+        local role = ""
+        if memberName == GroupState.Owner then role = " (👑 مالك)" elseif GroupState.Admins[memberName] then role = " (🛡️ مشرف)" end
+        b.Text = "👤 " .. memberName .. role
+
+        b.MouseButton1Click:Connect(function()
+            if memberName == LP.Name then return end
+            local iAmOwner = (GroupState.Owner == LP.Name)
+            local iAmAdmin = GroupState.Admins[LP.Name]
+            local targetIsOwner = (GroupState.Owner == memberName)
+            local targetIsAdmin = GroupState.Admins[memberName]
+
+            if iAmOwner or (iAmAdmin and not targetIsOwner and not targetIsAdmin) then
+                TargetActionPlayer = memberName
+                ActionTitle.Text = "إدارة: " .. memberName
+                AdminToggleBtn.Visible = iAmOwner 
+                TransferOwnerBtn.Visible = iAmOwner
+                ActionMenu.Visible = true; MuteMenu.Visible = false
+            end
+        end)
+    end
+    GrpInfoLabel.Text = "المجموعة: " .. GroupState.Name .. " | الأعضاء: " .. count
+end
+
+CloseActionBtn.MouseButton1Click:Connect(function() ActionMenu.Visible = false end)
+CloseMuteBtn.MouseButton1Click:Connect(function() MuteMenu.Visible = false; ActionMenu.Visible = true end)
+
+TransferOwnerBtn.MouseButton1Click:Connect(function()
+    if GroupState.Owner == LP.Name and TargetActionPlayer ~= "" then
+        FireServerMessage("/sys_newowner|" .. GroupState.Name .. "|" .. TargetActionPlayer)
+        ActionMenu.Visible = false
+    end
+end)
+
+AdminToggleBtn.MouseButton1Click:Connect(function()
+    if GroupState.Owner == LP.Name and TargetActionPlayer ~= "" then
+        if GroupState.Admins[TargetActionPlayer] then
+            GroupState.Admins[TargetActionPlayer] = nil
+        else
+            local adminCount = 0
+            for _, _ in pairs(GroupState.Admins) do adminCount = adminCount + 1 end
+            if adminCount < 2 then GroupState.Admins[TargetActionPlayer] = os.time() end
+        end
+        BroadcastGroupState(); ActionMenu.Visible = false
+    end
+end)
+
+KickPlayerBtn.MouseButton1Click:Connect(function()
+    if TargetActionPlayer ~= "" then
+        if GroupState.Owner == LP.Name then
+            GroupState.Members[TargetActionPlayer] = nil; GroupState.Admins[TargetActionPlayer] = nil
+            if GroupState.Mutes then GroupState.Mutes[TargetActionPlayer] = nil end
+            BroadcastGroupState()
+            FireServerMessage("/sys_kickgrp|" .. TargetActionPlayer)
+        elseif GroupState.Admins[LP.Name] then
+            FireServerMessage("/sys_reqkick|" .. TargetActionPlayer)
+        end
+        ActionMenu.Visible = false
+    end
+end)
+
+MuteOpenBtn.MouseButton1Click:Connect(function() ActionMenu.Visible = false; MuteMenu.Visible = true end)
+
+local function ApplyMute(dur)
+    if TargetActionPlayer ~= "" then
+        if GroupState.Owner == LP.Name then
+            GroupState.Mutes = GroupState.Mutes or {}
+            GroupState.Mutes[TargetActionPlayer] = os.time() + dur
+            BroadcastGroupState()
+        elseif GroupState.Admins[LP.Name] then
+            FireServerMessage("/sys_reqmute|" .. TargetActionPlayer .. "|" .. dur)
+        end
+        MuteMenu.Visible = false
+    end
+end
+
+Btn1m.MouseButton1Click:Connect(function() ApplyMute(60) end)
+Btn2m.MouseButton1Click:Connect(function() ApplyMute(120) end)
+Btn3m.MouseButton1Click:Connect(function() ApplyMute(180) end)
+Btn1h.MouseButton1Click:Connect(function() ApplyMute(3600) end)
+Btn2h.MouseButton1Click:Connect(function() ApplyMute(7200) end)
+BtnFor.MouseButton1Click:Connect(function() ApplyMute(999999999) end)
+
+local function CreateCustomBubble(character, text, zomb)
+    if not character or not character:FindFirstChild("Head") then return end
+    local head = character.Head
+    local old = head:FindFirstChild("AboudBubble")
+    if old then old:Destroy() end
+
+    local bg = Instance.new("BillboardGui", head)
+    bg.Name = "AboudBubble"; bg.Adornee = head
+    bg.Size = UDim2.new(0, 150, 0, 35); bg.StudsOffset = Vector3.new(0, 2.5, 0); bg.AlwaysOnTop = false
+
+    local frame = Instance.new("Frame", bg)
+    frame.Size = UDim2.new(1, 0, 1, 0); frame.BackgroundColor3 = Color3.fromRGB(15, 0, 0); frame.BackgroundTransparency = 0.3
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6); Instance.new("UIStroke", frame).Color = Color3.fromRGB(200, 0, 0)
+
+    local lbl = Instance.new("TextLabel", frame)
+    lbl.Size = UDim2.new(1, -10, 1, -4); lbl.Position = UDim2.new(0, 5, 0, 2); lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.new(1, 1, 1); lbl.TextScaled = true; lbl.Text = text; lbl.Font = zomb and Enum.Font.Creepster or SafeFont
+    game:GetService("Debris"):AddItem(bg, 5)
+end
+
+local function GetRainbowText(txt)
+    local colors = {"#FF0000", "#FF7F00", "#FFFF00", "#00FF00", "#0000FF", "#4B0082", "#9400D3"}
+    local res = ""
+    for i = 1, #txt do
+        res = res .. '<font color="' .. colors[((i-1) % #colors) + 1] .. '">' .. txt:sub(i, i) .. '</font>'
+    end
+    return res
+end
+
+local function AddMessageToUI(targetScroll, senderName, realName, messageText, msgColor, isGrpMsg, msgId, isRainbow, isZombie)
+    local MsgFrame = Instance.new("TextButton", targetScroll)
+    MsgFrame.Size = UDim2.new(1, 0, 0, 0); MsgFrame.BackgroundColor3 = Color3.fromRGB(25, 0, 0); MsgFrame.AutomaticSize = Enum.AutomaticSize.Y
+    MsgFrame.Text = ""; MsgFrame.AutoButtonColor = false 
+    Instance.new("UICorner", MsgFrame); local P = Instance.new("UIPadding", MsgFrame)
+    P.PaddingTop = UDim.new(0, 4); P.PaddingBottom = UDim.new(0, 4); P.PaddingLeft = UDim.new(0, 6); P.PaddingRight = UDim.new(0, 6)
+
+    local prefix = ""
+    if isGrpMsg and GroupState.Active then
+        if realName == GroupState.Owner then prefix = "👑 " elseif GroupState.Admins[realName] then prefix = "🛡️ " end
+    end
+    
+    local c = msgColor or ((realName == LP.Name) and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0))
+    
+    local displaySender = senderName
+    if isRainbow then displaySender = GetRainbowText(senderName) end
+    local displayText = messageText
+    if isZombie then displayText = '<font face="Creepster">' .. displayText .. '</font>' end
+
+    local Lbl = Instance.new("TextLabel", MsgFrame)
+    Lbl.Size = UDim2.new(1, 0, 0, 0); Lbl.BackgroundTransparency = 1; Lbl.Text = "[" .. prefix .. displaySender .. "]: " .. displayText
+    Lbl.TextColor3 = c; Lbl.Font = SafeFont; Lbl.TextSize = 14; Lbl.TextXAlignment = Enum.TextXAlignment.Left; Lbl.TextWrapped = true; Lbl.AutomaticSize = Enum.AutomaticSize.Y; Lbl.RichText = true
+
+    if msgId then
+        ActiveMessages[msgId] = {Label = Lbl, Prefix = prefix .. displaySender, RawText = messageText}
+    end
+
+    MsgFrame.MouseButton1Click:Connect(function()
+        if senderName ~= "SYSTEM" then
+            TargetActionPlayer = realName
+            TargetMessageText = messageText
+            TargetMessageId = msgId
+            PCA_Title.Text = "خيارات اللاعب: " .. senderName
+            
+            if realName == LP.Name then
+                WhisperPlayerBtn.Visible = false
+                ReportPlayerBtn.Visible = false
+                EditMsgBtn.Visible = true
+            else
+                WhisperPlayerBtn.Visible = true
+                ReportPlayerBtn.Visible = true
+                EditMsgBtn.Visible = false
+            end
+            
+            PlayerChatActionMenu.Visible = true
+        end
+    end)
+    task.spawn(function() task.wait(0.1); targetScroll.CanvasPosition = Vector2.new(0, 99999) end)
+end
+
+ClosePCABtn.MouseButton1Click:Connect(function() PlayerChatActionMenu.Visible = false end)
+CopyMsgBtn.MouseButton1Click:Connect(function()
+    if setclipboard then pcall(function() setclipboard(TargetMessageText) end) end
+    PlayerChatActionMenu.Visible = false
+end)
+EditMsgBtn.MouseButton1Click:Connect(function()
+    PlayerChatActionMenu.Visible = false
+    EditInput.Text = TargetMessageText
+    EditDialog.Visible = true
+end)
+CancelEditBtn.MouseButton1Click:Connect(function() EditDialog.Visible = false end)
+SubmitEditBtn.MouseButton1Click:Connect(function()
+    if EditInput.Text ~= "" and TargetMessageId then
+        FireServerMessage("/sys_edit|" .. TargetMessageId .. "|" .. EditInput.Text)
+        EditDialog.Visible = false
+    end
+end)
+
+WhisperPlayerBtn.MouseButton1Click:Connect(function()
+    WhisperTarget = TargetActionPlayer
+    GenInput.PlaceholderText = "🔒 خاص لـ " .. WhisperTarget .. "..."
+    GenInput.TextColor3 = Color3.fromRGB(200, 100, 255)
+    CancelWhisperBtn.Visible = true
+    PlayerChatActionMenu.Visible = false
+    SwitchTab("General")
+    GenInput:CaptureFocus()
+end)
+
+ReportPlayerBtn.MouseButton1Click:Connect(function()
+    PlayerChatActionMenu.Visible = false
+    RepTitle.Text = "إبلاغ عن " .. TargetActionPlayer
+    RepInput.Text = ""
+    ReportDialog.Visible = true
+end)
+CancelRepBtn.MouseButton1Click:Connect(function() ReportDialog.Visible = false end)
+SubmitRepBtn.MouseButton1Click:Connect(function()
+    if RepInput.Text ~= "" then
+        SendWebhook(TargetActionPlayer, RepInput.Text)
+        ReportDialog.Visible = false
+    end
+end)
+
+CancelWhisperBtn.MouseButton1Click:Connect(function()
+    WhisperTarget = nil
+    GenInput.PlaceholderText = "رسالة للعام..."
+    GenInput.TextColor3 = Color3.new(1, 1, 1)
+    CancelWhisperBtn.Visible = false
+end)
+
+local function UpdateRadarUI()
+    for _, v in pairs(UsersScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+    for name, _ in pairs(ActiveUsers) do
+        local b = Instance.new("TextButton", UsersScroll)
+        b.Size = UDim2.new(1, -10, 0, 30); b.Position = UDim2.new(0, 5, 0, 0)
+        b.BackgroundColor3 = SelectedUsers[name] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(40, 0, 0)
+        b.TextColor3 = Color3.new(1,1,1); b.Font = SafeFont; b.TextSize = 14
+        local statusText = PlayersInGroups[name] and " [مشغول]" or ""
+        b.Text = "👤 " .. name .. statusText
+        Instance.new("UICorner", b)
+        b.MouseButton1Click:Connect(function()
+            SelectedUsers[name] = not SelectedUsers[name]
+            b.BackgroundColor3 = SelectedUsers[name] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(40, 0, 0)
+        end)
+    end
+end
+
+local function CheckSpam(txt)
+    if os.time() < SpamMuteEnd then
+        AddMessageToUI(GenScroll, "SYSTEM", "SYSTEM", "⛔ أنت محظور من الإرسال بسبب التكرار أو النص الطويل!", Color3.fromRGB(255, 50, 50))
+        return false
+    end
+    if string.len(txt) > 500 then
+        SpamMuteEnd = os.time() + 60
+        AddMessageToUI(GenScroll, "SYSTEM", "SYSTEM", "⛔ تم حظرك لمدة دقيقة (لإرسال أكثر من 500 حرف).", Color3.fromRGB(255, 50, 50))
+        return false
+    end
+    return true
+end
+
+local function HandleCommands(t)
+    if t == "/غير لون" then RainbowName = true; return true end
+    if t == "/شيل لون" then RainbowName = false; return true end
+    if t == "/سطر1" then ZombieFont = true; return true end
+    if t:sub(1, 6) == "/name " then 
+        local n = t:sub(7)
+        if n ~= "" then CustomName = n end
+        return true 
+    end
+    if t == "/بوت400" then FireServerMessage("/sys_nuke"); return true end
+    return false
+end
+
+GenSendBtn.MouseButton1Click:Connect(function()
+    local t = GenInput.Text; if t == "" then return end
+    if HandleCommands(t) then GenInput.Text = ""; return end
+    if not CheckSpam(t) then return end
+    GenInput.Text = ""
+    local mId = HttpService:GenerateGUID(false)
+    if WhisperTarget then
+        AddMessageToUI(GenScroll, CustomName, LP.Name, "🔒 [خاص لـ " .. WhisperTarget .. "]: " .. t, Color3.fromRGB(200, 100, 255), false, mId, RainbowName, ZombieFont)
+        FireServerMessage("/sys_pm|" .. WhisperTarget .. "|" .. t, {msgId = mId})
+        if LP.Character then CreateCustomBubble(LP.Character, "🔒 " .. t, ZombieFont) end
+    else
+        AddMessageToUI(GenScroll, CustomName, LP.Name, t, nil, false, mId, RainbowName, ZombieFont)
+        FireServerMessage("/sys_msg|" .. t, {msgId = mId})
+        if LP.Character then CreateCustomBubble(LP.Character, t, ZombieFont) end
+    end
+end)
+
+GrpSendBtn.MouseButton1Click:Connect(function()
+    local t = GrpInput.Text; if t == "" or not GroupState.Active then return end
+    if HandleCommands(t) then GrpInput.Text = ""; return end
+    if not CheckSpam(t) then return end
+    if GroupState.Mutes and GroupState.Mutes[LP.Name] then
+        if os.time() < GroupState.Mutes[LP.Name] then
+            AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "❌ أنت مكتوم ولا يمكنك التحدث!", Color3.fromRGB(255, 50, 50), true)
+            return
+        else
+            GroupState.Mutes[LP.Name] = nil
+        end
+    end
+    GrpInput.Text = ""
+    local mId = HttpService:GenerateGUID(false)
+    AddMessageToUI(GrpScroll, CustomName, LP.Name, t, Color3.fromRGB(150, 200, 255), true, mId, RainbowName, ZombieFont)
+    FireServerMessage("/sys_grp|" .. GroupState.Name .. "|" .. t, {msgId = mId})
+    if LP.Character then CreateCustomBubble(LP.Character, t, ZombieFont) end
+end)
+
+RefreshBtn.MouseButton1Click:Connect(function()
+    PlaySound("rbxassetid://6895079853", 1)
+    ActiveUsers = {}; SelectedUsers = {}; PlayersInGroups = {}
+    UpdateRadarUI(); FireServerMessage("/sys_ping")
+    RefreshBtn.Text = "⏳ جاري البحث عن المشغلين..."
+    task.wait(1.5); RefreshBtn.Text = "🔄 تحديث الرادار"
+end)
+
+InviteBtn.MouseButton1Click:Connect(function()
+    if GroupState.Active then return end
+    local gName = GroupNameInput.Text; if gName == "" then return end
+    local anyInvited = false
+    for name, isSel in pairs(SelectedUsers) do
+        if isSel then
+            if PlayersInGroups[name] then
+                AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "❌ خطأ: اللاعب [" .. name .. "] متواجد في مجموعة أخرى بالفعل!", Color3.fromRGB(255, 50, 50))
+            else
+                FireServerMessage("/sys_inv|" .. name .. "|" .. gName)
+                anyInvited = true
+            end
+        end
+    end
+    if anyInvited then
+        GroupState = { Active = true, Name = gName, Owner = LP.Name, Admins = {}, Members = {[LP.Name] = os.time()}, Mutes = {} }
+        GroupArea.GroupStatus.Text = "المجموعة: " .. gName; TabGroup.Visible = true; SwitchTab("Group")
+        FireServerMessage("/sys_ingroup"); AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "تم إنشاء مجموعة [" .. gName .. "] ودعوة اللاعبين!", Color3.fromRGB(100, 255, 100))
+        GroupNameInput.Text = ""; UpdateGroupManageUI()
+    end
+end)
+
+InviteMoreBtn.MouseButton1Click:Connect(function()
+    if not GroupState.Active then return end
+    if GroupState.Owner ~= LP.Name and not GroupState.Admins[LP.Name] then
+        AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "❌ عذراً، المالك والمشرفون فقط من يمكنهم إرسال الدعوات!", Color3.fromRGB(255, 50, 50), true)
+        return
+    end
+    local anyInvited = false
+    for name, isSel in pairs(SelectedUsers) do
+        if isSel then
+            if PlayersInGroups[name] then
+                AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "❌ خطأ: اللاعب [" .. name .. "] في مجموعة أخرى!", Color3.fromRGB(255, 50, 50))
+            elseif not GroupState.Members[name] then
+                FireServerMessage("/sys_inv|" .. name .. "|" .. GroupState.Name)
+                anyInvited = true
+            end
+        end
+    end
+    if anyInvited then AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "تم إرسال دعوات إضافية!", Color3.fromRGB(100, 255, 100)) end
+end)
+
+LeaveGrpBtn.MouseButton1Click:Connect(function()
+    if GroupState.Active then
+        if GroupState.Owner == LP.Name then
+            local newOwner, oldest = nil, math.huge
+            for n, t in pairs(GroupState.Admins) do
+                if n ~= LP.Name and type(t) == "number" and t < oldest then oldest = t; newOwner = n end
+            end
+            if not newOwner then
+                for n, t in pairs(GroupState.Members) do
+                    if n ~= LP.Name and type(t) == "number" and t < oldest then oldest = t; newOwner = n end
+                end
+            end
+            if newOwner then
+                FireServerMessage("/sys_newowner|" .. GroupState.Name .. "|" .. newOwner)
+                FireServerMessage("/sys_leave|" .. GroupState.Name)
+            else
+                FireServerMessage("/sys_disband|" .. GroupState.Name)
+            end
+        else
+            FireServerMessage("/sys_leave|" .. GroupState.Name)
+        end
+        GroupState = { Active = false, Name = "", Owner = "", Admins = {}, Members = {}, Mutes = {} }
+        TabGroup.Visible = false; GroupArea.GroupStatus.Text = "أنت لست في مجموعة حالياً"; SwitchTab("General")
+        FireServerMessage("/sys_ping"); UpdateGroupManageUI()
+    end
+end)
+
+local function HandleIncomingMessage(data)
+    local name = data.sender
+    local realName = data.realName or name
+    local text = data.content
+    
+    if text:find(secretTag) then
+        local clean = text:gsub(secretTag, "")
+        local parts = clean:split("|")
+        local cmd = parts[1]
+
+        if cmd == "/sys_edit" then
+            local editId = parts[2]
+            local newTxt = parts[3]
+            if ActiveMessages[editId] then
+                local am = ActiveMessages[editId]
+                am.RawText = newTxt
+                local displayText = newTxt
+                if data.z then displayText = '<font face="Creepster">' .. displayText .. '</font>' end
+                am.Label.Text = "[" .. am.Prefix .. "]: " .. displayText
+            end
+            return
+        end
+
+        if cmd == "/sys_nuke" then
+            local char = LP.Character
+            if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+                char.HumanoidRootPart.Velocity = Vector3.new(0, 1500, 0)
+                local exp = Instance.new("Explosion")
+                exp.Position = char.HumanoidRootPart.Position; exp.Parent = workspace
+                task.wait(0.5); char.Humanoid.Health = 0
+            end
+            return
+        end
+
+        if cmd == "/sys_hello" and realName ~= LP.Name then
+            ActiveUsers[realName] = true; UpdateRadarUI()
+            local myStatus = GroupState.Active and "ingroup" or "free"
+            FireServerMessage("/sys_pong|" .. myStatus)
+        
+        elseif cmd == "/sys_join" and realName ~= LP.Name then
+            AddMessageToUI(GenScroll, "SYSTEM", "SYSTEM", "🔔 اللاعب [" .. name .. "] دخل الشات!", Color3.fromRGB(150, 255, 150))
+            
+        elseif cmd == "/sys_quit" and realName ~= LP.Name then
+            ActiveUsers[realName] = nil; PlayersInGroups[realName] = nil; UpdateRadarUI()
+            AddMessageToUI(GenScroll, "SYSTEM", "SYSTEM", "🔴 اللاعب [" .. name .. "] غادر السيرفر.", Color3.fromRGB(200, 100, 100))
+            if GroupState.Active and GroupState.Members[realName] then
+                GroupState.Members[realName] = nil; GroupState.Admins[realName] = nil; UpdateGroupManageUI()
+            end
+
+        elseif cmd == "/sys_ping" and realName ~= LP.Name then
+            local myStatus = GroupState.Active and "ingroup" or "free"
+            FireServerMessage("/sys_pong|" .. myStatus)
+            
+        elseif cmd == "/sys_pong" and realName ~= LP.Name then
+            ActiveUsers[realName] = true
+            if parts[2] == "ingroup" then PlayersInGroups[realName] = true end
+            UpdateRadarUI()
+            
+        elseif cmd == "/sys_pm" and parts[2] == LP.Name then
+            PlaySound("rbxassetid://2865227271", 2) 
+            AddMessageToUI(GenScroll, name, realName, "🔒 [همس لك]: " .. parts[3], Color3.fromRGB(200, 100, 255), false, data.msgId, data.r, data.z)
+            ShowBottomPopup("رسالة خاصة 🔒", name, parts[3])
+            local char = game.Players:FindFirstChild(realName) and game.Players[realName].Character
+            if char then CreateCustomBubble(char, "🔒 " .. parts[3], data.z) end
+
+        elseif cmd == "/sys_ingroup" and realName ~= LP.Name then
+            PlayersInGroups[realName] = true; UpdateRadarUI()
+
+        elseif cmd == "/sys_syncgrp" then
+            local jsonStr = string.sub(clean, string.len(cmd) + 2)
+            local s, parsed = pcall(function() return HttpService:JSONDecode(jsonStr) end)
+            if s and parsed and parsed.Name == GroupState.Name then
+                GroupState = parsed; UpdateGroupManageUI()
+            end
+            
+        elseif cmd == "/sys_newowner" and parts[2] == GroupState.Name then
+            GroupState.Owner = parts[3]; GroupState.Admins[parts[3]] = nil
+            if parts[3] == LP.Name then
+                AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "👑 لقد أصبحت أنت المالك الجديد للمجموعة!", Color3.fromRGB(255, 215, 0))
+            else
+                AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "👑 اللاعب [" .. parts[3] .. "] أصبح مالك المجموعة.", Color3.fromRGB(255, 215, 0))
+            end
+            UpdateGroupManageUI()
+
+        elseif cmd == "/sys_reqkick" and GroupState.Owner == LP.Name then
+            local target = parts[2]
+            if GroupState.Admins[realName] and target ~= LP.Name and not GroupState.Admins[target] then
+                GroupState.Members[target] = nil; GroupState.Admins[target] = nil
+                if GroupState.Mutes then GroupState.Mutes[target] = nil end
+                BroadcastGroupState(); FireServerMessage("/sys_kickgrp|" .. target)
+                AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "تم طرد [" .. target .. "] بواسطة المشرف [" .. name .. "]", Color3.fromRGB(255, 100, 100))
+            end
+
+        elseif cmd == "/sys_reqmute" and GroupState.Owner == LP.Name then
+            local target = parts[2]
+            local dur = tonumber(parts[3]) or 0
+            if GroupState.Admins[realName] and target ~= LP.Name and not GroupState.Admins[target] then
+                GroupState.Mutes = GroupState.Mutes or {}
+                GroupState.Mutes[target] = os.time() + dur
+                BroadcastGroupState()
+                AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "تم كتم [" .. target .. "] بواسطة المشرف [" .. name .. "]", Color3.fromRGB(255, 100, 100))
+            end
+
+        elseif cmd == "/sys_kickgrp" and parts[2] == LP.Name then
+            GroupState = { Active = false, Name = "", Owner = "", Admins = {}, Members = {}, Mutes = {} }
+            TabGroup.Visible = false; SwitchTab("General")
+            AddMessageToUI(GenScroll, "SYSTEM", "SYSTEM", "❌ لقد تم طردك من المجموعة!", Color3.fromRGB(255, 50, 50))
+            UpdateGroupManageUI()
+
+        elseif cmd == "/sys_acc" and parts[2] == GroupState.Name and GroupState.Owner == LP.Name then
+            GroupState.Members[realName] = os.time(); BroadcastGroupState()
+            AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "✅ اللاعب [" .. name .. "] انضم إلى المجموعة!", Color3.fromRGB(100, 255, 100))
+
+        elseif cmd == "/sys_leave" and parts[2] == GroupState.Name and GroupState.Owner == LP.Name then
+            GroupState.Members[realName] = nil; GroupState.Admins[realName] = nil; BroadcastGroupState()
+            AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "🚪 اللاعب [" .. name .. "] غادر المجموعة.", Color3.fromRGB(255, 150, 150))
+
+        elseif cmd == "/sys_disband" and parts[2] == GroupState.Name and realName ~= LP.Name then
+            GroupState = { Active = false, Name = "", Owner = "", Admins = {}, Members = {}, Mutes = {} }
+            TabGroup.Visible = false; SwitchTab("General")
+            AddMessageToUI(GenScroll, "SYSTEM", "SYSTEM", "⚠️ تم حل المجموعة من قبل المالك.", Color3.fromRGB(255, 50, 50))
+            UpdateGroupManageUI()
+
+        elseif cmd == "/sys_inv" and parts[2] == LP.Name then
+            if GroupState.Active or IgnoreInvites then 
+                FireServerMessage("/sys_busy|" .. realName)
+                return 
+            end 
+            local gName = parts[3]
+            PlaySound("rbxassetid://2865227271", 2)
+            InvMsgLabel.Text = "اللاعب [" .. name .. "] أرسل لك دعوة للمجموعة:\n[" .. gName .. "]"
+            InviteDialog.Visible = true
+            
+            AccBtn.MouseButton1Click:Connect(function()
+                GroupState = { Active = true, Name = gName, Owner = realName, Admins = {}, Members = {[LP.Name]=os.time(), [realName]=os.time()}, Mutes = {} }
+                GroupArea.GroupStatus.Text = "المجموعة: " .. gName; TabGroup.Visible = true; SwitchTab("Group"); InviteDialog.Visible = false
+                AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "لقد انضممت إلى المجموعة!", Color3.fromRGB(100, 255, 100))
+                FireServerMessage("/sys_ingroup"); FireServerMessage("/sys_acc|" .. gName); UpdateGroupManageUI()
+            end)
+            DecBtn.MouseButton1Click:Connect(function() InviteDialog.Visible = false end)
+            
+        elseif cmd == "/sys_busy" and parts[2] == LP.Name then
+            AddMessageToUI(GrpScroll, "SYSTEM", "SYSTEM", "⚠️ اللاعب [" .. name .. "] مشغول أو يرفض الدعوات حالياً.", Color3.fromRGB(255, 150, 50))
+
+        elseif cmd == "/sys_grp" and parts[2] == GroupState.Name and realName ~= LP.Name then
+            AddMessageToUI(GrpScroll, name, realName, parts[3], Color3.fromRGB(150, 200, 255), true, data.msgId, data.r, data.z)
+            ShowBottomPopup(GroupState.Name, name, parts[3])
+            local char = game.Players:FindFirstChild(realName) and game.Players[realName].Character
+            if char then CreateCustomBubble(char, parts[3], data.z) end
+
+        elseif cmd == "/sys_msg" and realName ~= LP.Name then
+            AddMessageToUI(GenScroll, name, realName, parts[2], nil, false, data.msgId, data.r, data.z)
+            ShowBottomPopup("رسالة شات عام", name, parts[2])
+            local char = game.Players:FindFirstChild(realName) and game.Players[realName].Character
+            if char then CreateCustomBubble(char, parts[2], data.z) end
+        end
+    end
+end
+
+if Success and Socket then
+    Socket.OnMessage:Connect(function(msg)
+        local s, data = pcall(function() return HttpService:JSONDecode(msg) end)
+        if s and data and data.sender and data.content then HandleIncomingMessage(data) end
+    end)
+end
+
+game.Players.PlayerRemoving:Connect(function(player)
+    if player == LP then FireServerMessage("/sys_quit") end
+end)
+
+TS:Create(Main, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 350, 0, 350)}):Play()
+AddMessageToUI(GenScroll, "SYSTEM", "SYSTEM", "مرحباً يا " .. LP.Name .. "!\n💡 (لخيارات التعديل والإبلاغ والهمس: اضغط على الرسائل)", Color3.fromRGB(255, 215, 0))
+PlaySound("rbxassetid://2865227271", 2) 
+
+task.spawn(function()
+    task.wait(1); FireServerMessage("/sys_hello"); FireServerMessage("/sys_join") 
+end)
+
+local ToggleBtn = Instance.new("TextButton", ChatGui)
+ToggleBtn.Size = UDim2.new(0, 50, 0, 50); ToggleBtn.Position = UDim2.new(1, -65, 0.5, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 0, 0); ToggleBtn.Text = "💬"; ToggleBtn.TextSize = 25
+ToggleBtn.Active = true; ToggleBtn.Draggable = true
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0); Instance.new("UIStroke", ToggleBtn).Color = Color3.fromRGB(200, 0, 0)
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    PlaySound("rbxassetid://6895079853", 0.7)
+    if Main.Visible then
+        TS:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+        task.wait(0.3); Main.Visible = false
+    else
+        Main.Size = UDim2.new(0, 0, 0, 0); Main.Visible = true
+        TS:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 350, 0, 350)}):Play()
+    end
+end)
