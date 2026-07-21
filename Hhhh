@@ -1,1 +1,191 @@
-hh
+local vim = game:GetService("VirtualInputManager")
+local rs = game:GetService("RunService")
+local coreGui = game:GetService("CoreGui")
+local players = game:GetService("Players")
+local player = players.LocalPlayer
+local camera = workspace.CurrentCamera
+local starterGui = game:GetService("StarterGui")
+
+local function sendNotification(title, text)
+    pcall(function()
+        starterGui:SetCore("SendNotification", {
+            Title = title;
+            Text = text;
+            Duration = 3;
+        })
+    end)
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "AboodAutoClicker"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = (gethui and gethui()) or coreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 220, 0, 50)
+frame.Position = UDim2.new(0.5, -110, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(60, 10, 15)
+frame.Active = true
+frame.Draggable = false
+frame.Parent = gui
+
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+local frameStroke = Instance.new("UIStroke", frame)
+frameStroke.Color = Color3.fromRGB(120, 20, 30)
+frameStroke.Thickness = 2
+
+local clickBtn = Instance.new("ImageButton", frame)
+clickBtn.Size = UDim2.new(0, 35, 0, 35)
+clickBtn.Position = UDim2.new(0, 6, 0, 7)
+clickBtn.BackgroundColor3 = Color3.fromRGB(40, 5, 10)
+clickBtn.Image = "rbxassetid://3944703587"
+Instance.new("UICorner", clickBtn).CornerRadius = UDim.new(0, 8)
+local cStroke = Instance.new("UIStroke", clickBtn)
+cStroke.Color = Color3.fromRGB(200, 50, 50)
+cStroke.Thickness = 2
+
+local spinBtn = Instance.new("ImageButton", frame)
+spinBtn.Size = UDim2.new(0, 35, 0, 35)
+spinBtn.Position = UDim2.new(0, 47, 0, 7)
+spinBtn.BackgroundColor3 = Color3.fromRGB(40, 5, 10)
+spinBtn.Image = "rbxassetid://6031280882"
+Instance.new("UICorner", spinBtn).CornerRadius = UDim.new(0, 8)
+local sStroke = Instance.new("UIStroke", spinBtn)
+sStroke.Color = Color3.fromRGB(200, 50, 50)
+sStroke.Thickness = 2
+
+local settingsBtn = Instance.new("ImageButton", frame)
+settingsBtn.Size = UDim2.new(0, 35, 0, 35)
+settingsBtn.Position = UDim2.new(0, 88, 0, 7)
+settingsBtn.BackgroundColor3 = Color3.fromRGB(40, 5, 10)
+settingsBtn.Image = "rbxassetid://6023426915"
+Instance.new("UICorner", settingsBtn).CornerRadius = UDim.new(0, 8)
+local stStroke = Instance.new("UIStroke", settingsBtn)
+stStroke.Color = Color3.fromRGB(200, 50, 50)
+stStroke.Thickness = 2
+
+local closeBtn = Instance.new("TextButton", frame)
+closeBtn.Size = UDim2.new(0, 80, 0, 35)
+closeBtn.Position = UDim2.new(0, 130, 0, 7)
+closeBtn.BackgroundColor3 = Color3.fromRGB(140, 20, 30)
+closeBtn.Text = "إغلاق X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 14
+closeBtn.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
+
+local settingsFrame = Instance.new("Frame", frame)
+settingsFrame.Size = UDim2.new(0, 200, 0, 85)
+settingsFrame.Position = UDim2.new(0, 10, 0, 58)
+settingsFrame.BackgroundColor3 = Color3.fromRGB(50, 8, 12)
+settingsFrame.Visible = false
+Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 8)
+local sfStroke = Instance.new("UIStroke", settingsFrame)
+sfStroke.Color = Color3.fromRGB(120, 20, 30)
+sfStroke.Thickness = 2
+
+local noticeLabel = Instance.new("TextLabel", settingsFrame)
+noticeLabel.Size = UDim2.new(1, -10, 0, 40)
+noticeLabel.Position = UDim2.new(0, 5, 0, 5)
+noticeLabel.BackgroundTransparency = 1
+noticeLabel.Text = "لو ضهرتلك اي مشكله اضغط هذا زر"
+noticeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+noticeLabel.TextSize = 13
+noticeLabel.Font = Enum.Font.SourceSansBold
+noticeLabel.TextWrapped = true
+
+local actionBtn = Instance.new("TextButton", settingsFrame)
+actionBtn.Size = UDim2.new(1, -20, 0, 28)
+actionBtn.Position = UDim2.new(0, 10, 0, 50)
+actionBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 50)
+actionBtn.Text = "اضغط"
+actionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+actionBtn.TextSize = 14
+actionBtn.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", actionBtn).CornerRadius = UDim.new(0, 6)
+
+local clickToggle, spinToggle, spinLoop
+
+local function stopAll()
+    clickToggle = false
+    spinToggle = false
+    if spinLoop then
+        spinLoop:Disconnect()
+        spinLoop = nil
+    end
+    pcall(function()
+        local midX, midY = camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2
+        vim:SendMouseButtonEvent(midX, midY, 0, false, game, 1)
+    end)
+end
+
+settingsBtn.Activated:Connect(function()
+    settingsFrame.Visible = not settingsFrame.Visible
+end)
+
+actionBtn.Activated:Connect(function()
+    task.spawn(function()
+        pcall(function()
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.Health = 0
+            end
+            task.wait(1.5)
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.Health = 0
+            end
+        end)
+    end)
+end)
+
+clickBtn.Activated:Connect(function()
+    clickToggle = not clickToggle
+    cStroke.Color = clickToggle and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(200, 50, 50)
+    if clickToggle then
+        task.spawn(function()
+            while clickToggle do
+                pcall(function()
+                    local midX, midY = camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2
+                    vim:SendMouseButtonEvent(midX, midY, 0, true, game, 1)
+                    task.wait(0.01)
+                    vim:SendMouseButtonEvent(midX, midY, 0, false, game, 1)
+                end)
+                task.wait(0.05)
+            end
+            pcall(function()
+                local midX, midY = camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2
+                vim:SendMouseButtonEvent(midX, midY, 0, false, game, 1)
+            end)
+        end)
+    else
+        pcall(function()
+            local midX, midY = camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2
+            vim:SendMouseButtonEvent(midX, midY, 0, false, game, 1)
+        end)
+    end
+end)
+
+spinBtn.Activated:Connect(function()
+    spinToggle = not spinToggle
+    sStroke.Color = spinToggle and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(200, 50, 50)
+    if spinToggle then
+        sendNotification("سكربت عبود اوتو كليك", "تم التفعيل: لا يمكن لأحد طردك (Anti-AFK شغال)")
+        spinLoop = rs.RenderStepped:Connect(function()
+            if camera then
+                camera.CFrame = camera.CFrame * CFrame.Angles(0, math.rad(2), 0)
+            end
+        end)
+    else
+        sendNotification("سكربت عبود اوتو كليك", "تم إيقاف نظام الحماية من الطرد")
+        if spinLoop then
+            spinLoop:Disconnect()
+            spinLoop = nil
+        end
+    end
+end)
+
+closeBtn.Activated:Connect(function()
+    stopAll()
+    sendNotification("سكربت عبود اوتو كليك", "تم إغلاق السكربت بالكامل بنجاح")
+    gui:Destroy()
+end)
