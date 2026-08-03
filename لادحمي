@@ -1,0 +1,212 @@
+if isBrookhaven then
+    local musicTabBtn = Tab("🎵 الأغاني", 10, function()
+
+        local mFrame = Instance.new("Frame", Content)
+        mFrame.Size = UDim2.new(1, -10, 0, 90)
+        mFrame.BackgroundColor3 = Color3.new(ThemeColor.R*0.12, ThemeColor.G*0.12, ThemeColor.B*0.12)
+        mFrame.BackgroundTransparency = 0.35
+        mFrame.ZIndex = 4
+        Instance.new("UICorner", mFrame)
+        table.insert(ThemedMenus, mFrame)
+        local stroke = Instance.new("UIStroke", mFrame); stroke.Color = ThemeColor; stroke.Thickness = 2; table.insert(ThemedStrokes, stroke)
+
+        local idBox = Instance.new("TextBox", mFrame)
+        idBox.Size = UDim2.new(0.9, 0, 0, 35)
+        idBox.Position = UDim2.new(0.05, 0, 0, 10)
+        idBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        idBox.TextColor3 = Color3.new(1, 1, 1)
+        idBox.Font = SafeFont
+        idBox.TextSize = 14
+        idBox.PlaceholderText = GetTr("أدخل كود الأغنية هنا...")
+        idBox.Text = ""
+        idBox.ZIndex = 4
+        Instance.new("UICorner", idBox)
+
+        local function PlayGhostMusic(id)
+            if not isBrookhaven then SendCustomNotification(GetTr("⚠️ تنبيه"), "الأغاني تعمل فقط في ماب بروكهافن!", 3); return end
+            
+
+            task.spawn(function()
+                local RE = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+                local Remote = RE and RE:FindFirstChild("1NoMoto1rVehicle1s")
+                if Remote then
+                    pcall(function() Remote:FireServer("Delete NoMotorVehicle") end)
+                    for _,v in pairs(workspace:GetDescendants()) do
+                        if v.Name == "NoMotorVehicleModel" then v:Destroy() end
+                    end
+                    task.wait(0.5)
+                    pcall(function()
+                        Remote:FireServer("SkateBoard")
+                        Remote:FireServer("PickingScooterMusicText", tostring(id))
+                    end)
+                    SendCustomNotification("🎵", "تم تشغيل الأغنية للسيرفر بنجاح!", 3)
+                end
+            end)
+        end
+
+        local playBtn = Instance.new("TextButton", mFrame)
+        playBtn.Size = UDim2.new(0.9, 0, 0, 30)
+        playBtn.Position = UDim2.new(0.05, 0, 0, 50)
+        playBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        playBtn.TextColor3 = Color3.new(1, 1, 1)
+        playBtn.Font = SafeFont
+        playBtn.TextSize = 14
+        playBtn.Text = GetTr("▶️ تشغيل الأغنية")
+        playBtn.ZIndex = 4
+        Instance.new("UICorner", playBtn)
+
+        playBtn.MouseButton1Click:Connect(function()
+            PlayClickSound()
+            local rawText = idBox.Text
+            local id = rawText:match("%d+")
+            if id then PlayGhostMusic(id) else SendCustomNotification(GetTr("🚫 تنبيه"), "الرجاء إدخال أرقام فقط!", 3) end
+        end)
+
+        local div = Instance.new("Frame", Content); div.Size = UDim2.new(1, -10, 0, 2); div.BackgroundColor3 = ThemeColor; div.BackgroundTransparency = 0.5; div.BorderSizePixel = 0; div.ZIndex = 4
+
+        local function createPresetSong(nameKey, songId)
+            local btn = Instance.new("TextButton", Content)
+            btn.Size = UDim2.new(1, -10, 0, 35)
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.TextColor3 = Color3.new(1, 1, 1)
+            btn.Font = SafeFont
+            btn.TextSize = 14
+            btn.Text = "🎧 " .. GetTr(nameKey)
+            btn.ZIndex = 4
+            Instance.new("UICorner", btn)
+            btn.MouseButton1Click:Connect(function()
+                PlayClickSound()
+
+                local cleanId = songId:match("%d+")
+                if cleanId then
+                    idBox.Text = cleanId
+                    PlayGhostMusic(cleanId)
+                end
+            end)
+        end
+
+        createPresetSong("عود فخم", "114157294180725")
+        createPresetSong("ريمكس Dj", "130012558337510")
+        createPresetSong("يابهDj", "136909019669593")
+        createPresetSong("Dj", "106251060487387")
+        createPresetSong("جربها ودعيلي Dj", "73883012408965")
+        createPresetSong("عود", "72601818107644")
+        createPresetSong("للي عاحبو", "80281881556916")  
+        createPresetSong("مصري ليه بتنسى", "109409053513561")
+        createPresetSong("مصري الي بيخاف", "115153161936086")
+        createPresetSong("كنق ناصر", " 76650356472656 ")
+        createPresetSong("ليه ساكت", "13556605790477")
+        createPresetSong("مصري رايق", "10609918876009")
+        createPresetSong("مصري حلوهه", "132683832148231")
+        createPresetSong("كل القلوب عربي", "95995712530649")
+        createPresetSong("طبله عربي", "103899260817392")
+        createPresetSong("علي يا ابو الحسين عراقي", "98224127892587")
+        createPresetSong("عراقي لو تبوس", "80039364766636")
+        createPresetSong("دبكه", "76698985299412")
+        createPresetSong("سوري يابك ها يا", "98640789490482")
+        createPresetSong("دبكة سوري", "130467285446008")
+        createPresetSong("تروح وترجعلي مقهور", "131004009162099")
+        createPresetSong("ليه ساكت عزا ريمكس", "119437864395329")
+        createPresetSong("عود ٢", "82584945884001")
+        createPresetSong("عزيز وحنين طاطاوين", "137718075939941")
+        createPresetSong("طرب عربي", "85209271197446")
+        createPresetSong("عود عربي", "119205613821143")
+        createPresetSong("دندن عربي", "97653993295845")
+        createPresetSong("عود حائل", "86818715772064")
+        createPresetSong("عربي الناس يتغير", "110363399283800")
+        createPresetSong("جينا عادي عربي", "131507511127909")
+        createPresetSong("شوي شوي انساك", "72918998227337")
+        createPresetSong("سعوديين", "87506143975621")
+        createPresetSong("اه ياحلو", "93620598835551")
+        createPresetSong("مصري طرب", "123555966146480")
+        createPresetSong("مصري 1", "98509241790002")
+        createPresetSong("مصري 2", "76221024204234")
+        createPresetSong("برازيلي 1", "111668097052966")
+        createPresetSong("برازيلي 2", "94301557485291")
+        createPresetSong("برازيل6", "119372546759640")
+        createPresetSong("اجنبي 1", "95583505197638")
+        createPresetSong("اجنبي 2", "119936139925486")
+        createPresetSong("اجنبي 3", "76578817848504")
+        createPresetSong("اجنبي 4", "85481949732828")
+        createPresetSong("اجنبي 5", "109805678713575")
+        createPresetSong("اجنبي 6", "71517955953236")
+        createPresetSong("أجنبي طرب 1", "138465939141547")
+        createPresetSong("اجنبي طرب 2", "126422410489839")
+        createPresetSong("اجنبي راقي", "135018311294635")
+        createPresetSong("اجنبي حريقه", "105976374466752")
+        createPresetSong("راب اجنبي طرب", "17422074849")
+        createPresetSong("اجنبي 7", "83298925967923")
+        createPresetSong("اجنبي طرب 3", "74459138150344")
+        createPresetSong("اجنبي قوي", "112448168063121")
+        createPresetSong("اجنبي مولع طرب", "132127013599275")
+        createPresetSong("اجنبي طرب 4", "93257309679175")
+        createPresetSong("برازيلي 3", "100243051031264")
+        createPresetSong("كود 1", "93133248032532")
+        createPresetSong("كود 2", "71061449238812")
+        createPresetSong("اجنبي تخبل", "139202008782317")
+        createPresetSong("funk", "119439195710921")
+        createPresetSong("funk2", "80442979651569")
+        createPresetSong("كود3", "102225934895254")
+        createPresetSong("راقي اجنبي", "72892187453679")
+        createPresetSong("اجنبي حزين", "ا127012181396114")
+        createPresetSong("اجنبي حزين 2", "983103344398449")
+        createPresetSong("اجنبي حزين 3", "105848553383746")
+        createPresetSong("اجنبي حزين4", "75286443923155")
+        createPresetSong("حزين5", "121765516317425")
+        createPresetSong("فلاش باك للماضي 💔 ", "81351156382687")
+        createPresetSong("اجنبي حلوه", "121559463895939")
+        createPresetSong("اجنبي رومنسي", "138067913531622")
+        createPresetSong("طرببب", "716117262062506")
+        createPresetSong("اجنبي هجوله ", "75817059227467ا")
+        createPresetSong("اجنبي طرب2", "131483103484346")
+        createPresetSong("اجنبي Arua", "97491944760306")
+        createPresetSong("اجنبي بوم", "96915668633711")
+        createPresetSong("اجنبي للفيم بوي", "121242950842428")
+        createPresetSong("اجنبي مقرنات", "121755260609793")
+        createPresetSong("اجنبي حق حفلات", "91007045451630")
+        createPresetSong("2اجنبي حق حفلات", "112163139287560")
+        createPresetSong("عراقي فخم", "93297302504653")
+        createPresetSong("عراقي ياخذني ويطير", "106271890575602")
+        createPresetSong("الله يسامحك ياقلبي", "116815742960163")
+        createPresetSong("ميت اني من فرقاكم", "98313375960954")
+        createPresetSong("عراقي جفاني", "126189830749452")
+        createPresetSong("اغنيه", "131241214341563")
+        createPresetSong("اغنيه", "99787280635612")
+        createPresetSong("اغنيه", "126033753974793")
+        createPresetSong("غنيه", "92370754457408")
+        createPresetSong("اغاني", "126583820883563")
+        createPresetSong("اغنيه", "73174693707449")
+        createPresetSong("عثمان بالندور", "118882222304453")
+        createPresetSong("اغنيه", "80281881556916")
+        createPresetSong("Of", "128289955798159")
+        createPresetSong("ريمكس عراقي شراره", "81023003196738")
+        createPresetSong("... ", "137486973114353")
+        createPresetSong("... ", "113458227429706")
+        createPresetSong("نشيد", "124393177931443")
+        createPresetSong("نشيد2", "118001441128581")
+        createPresetSong("ازعاج", "140498577577255")
+        createPresetSong("نشيد3", "100754234156181")
+        createPresetSong("نشيد4", "131985065755673")
+        createPresetSong("نشيد5", " 131985065755673  ")
+        createPresetSong("سكران", " 111811908070601   ")
+        createPresetSong("نشيد قامت الدوله", "129963257934687 ")
+        createPresetSong("راب كلاش", "94943308357738")
+        createPresetSong("سب كسمك", "75745765058107  ")
+        createPresetSong("سب1", "6536444735")
+        createPresetSong("سب2", "8701632845")
+        createPresetSong("سب3", "88304661583351")
+        createPresetSong("نشيد درب طويل", "94411031367784 ")
+        createPresetSong("تفو على كسمك! ", "83059487997423 ")
+        createPresetSong("انجاز عضيم! ", "74473229795104")
+        createPresetSong("راب1", "98559374146822")
+        createPresetSong("راب2", "124482316940059")
+        createPresetSong("... ", "129546179244845")
+        createPresetSong("... ", "123619990717774")
+        createPresetSong("قران", "133566670320108")
+        createPresetSong("... ", "123181826801671")
+        createPresetSong("ماعلمك بابا", "131794008455004")
+        createPresetSong("صدام حسين", " 8273849195")
+    end) 
+   
+
+end
