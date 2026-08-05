@@ -1,0 +1,77 @@
+Tab("🏠 قائمة رئيسية", 2, function()
+    local welcomeTxt = Instance.new("TextLabel", Content); welcomeTxt.Size = UDim2.new(1, 0, 0, 30); welcomeTxt.BackgroundTransparency = 1; welcomeTxt.Text = "أهلاً بك، " .. LP.DisplayName .. " 👑"; welcomeTxt.TextColor3 = Color3.new(1,1,1); welcomeTxt.Font = SafeFont; welcomeTxt.TextSize = 18; welcomeTxt.TextXAlignment = Enum.TextXAlignment.Left; welcomeTxt.ZIndex = 4
+    
+    local headerBG = Instance.new("Frame", Content); headerBG.Size = UDim2.new(1, 0, 0, 90); headerBG.BackgroundColor3 = Color3.fromRGB(20, 20, 20); headerBG.BackgroundTransparency = 0.5; headerBG.ZIndex = 4; Instance.new("UICorner", headerBG).CornerRadius = UDim.new(0, 10); table.insert(ThemedMenus, headerBG)
+    local hdStroke = Instance.new("UIStroke", headerBG); hdStroke.Color = ThemeColor; hdStroke.Thickness = 1.5; table.insert(ThemedStrokes, hdStroke)
+
+    local pimg = Instance.new("ImageLabel", headerBG); pimg.Size = UDim2.new(0, 65, 0, 65); pimg.Position = UDim2.new(0, 15, 0.5, -32.5); pimg.ZIndex = 5; Instance.new("UICorner", pimg).CornerRadius = UDim.new(1, 0); pimg.Image = "rbxthumb://type=AvatarHeadShot&id="..LP.UserId.."&w=150&h=150"
+    local imgStroke = Instance.new("UIStroke", pimg); imgStroke.Color = ThemeColor; imgStroke.Thickness = 2; table.insert(ThemedStrokes, imgStroke)
+
+    local isVIP = VIPSupporters[LP.Name]
+    local badge = Instance.new("TextLabel", pimg); badge.Size = UDim2.new(0, 22, 0, 22); badge.Position = UDim2.new(1, -15, 1, -15); badge.BackgroundColor3 = isVIP and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(0, 150, 255); badge.Text = isVIP and "👑" or "✔"; badge.TextColor3 = Color3.new(1,1,1); badge.Font = SafeFont; badge.TextSize = 12; badge.ZIndex = 6; Instance.new("UICorner", badge).CornerRadius = UDim.new(1, 0); local badgeStroke = Instance.new("UIStroke", badge); badgeStroke.Color = Color3.new(1,1,1); badgeStroke.Thickness = 1
+
+    local nameL = Instance.new("TextLabel", headerBG); nameL.Size = UDim2.new(1, -100, 0, 25); nameL.Position = UDim2.new(0, 95, 0, 20); nameL.BackgroundTransparency = 1; nameL.Text = LP.DisplayName; nameL.TextColor3 = ThemeColor; nameL.Font = SafeFont; nameL.TextSize = 20; nameL.TextXAlignment = Enum.TextXAlignment.Left; nameL.ZIndex = 5; table.insert(ThemedTexts, nameL)
+    local userL = Instance.new("TextLabel", headerBG); userL.Size = UDim2.new(1, -100, 0, 20); userL.Position = UDim2.new(0, 95, 0, 45); userL.BackgroundTransparency = 1; userL.Text = "@" .. LP.Name; userL.TextColor3 = Color3.new(0.7, 0.7, 0.7); userL.Font = SafeFont; userL.TextSize = 13; userL.TextXAlignment = Enum.TextXAlignment.Left; userL.ZIndex = 5
+
+    local supBtn = Instance.new("ImageButton", headerBG); supBtn.Size = UDim2.new(0, 25, 0, 25); supBtn.Position = UDim2.new(1, -35, 0, 15); supBtn.BackgroundTransparency = 1; supBtn.Image = "rbxassetid://7733674079"; supBtn.ImageColor3 = ThemeColor; supBtn.ZIndex = 6; table.insert(GlowEffects, supBtn)
+    supBtn.MouseButton1Click:Connect(function() PlayClickSound(); SupportOverlay.Visible = true end)
+
+    local langBtn = Instance.new("TextButton", headerBG); langBtn.Size = UDim2.new(0, 20, 0, 20); langBtn.Position = UDim2.new(1, -65, 0, 18); langBtn.BackgroundTransparency = 1; langBtn.Text = "🌐"; langBtn.TextSize = 18; langBtn.ZIndex = 6
+    local discordSmallBtn = Instance.new("ImageButton", headerBG); discordSmallBtn.Size = UDim2.new(0, 25, 0, 25); discordSmallBtn.Position = UDim2.new(1, -67, 0, 45); discordSmallBtn.BackgroundTransparency = 1; discordSmallBtn.Image = "rbxassetid://115465566081051"; discordSmallBtn.ScaleType = Enum.ScaleType.Fit; discordSmallBtn.ZIndex = 6
+    
+    discordSmallBtn.MouseButton1Click:Connect(function() 
+        PlayClickSound(); 
+        pcall(function() setclipboard("\104\116\116\112\115\58\47\47\100\105\115\99\111\114\100\46\103\103\47\98\112\74\71\56\101\112\56\85") end); 
+        SendCustomNotification("✅", GetTr("تم نسخ رابط الديسكورد! اذهب للمتصفح والصقه."), 6) 
+    end)
+
+    local langMenu = Instance.new("Frame", headerBG); langMenu.Size = UDim2.new(0, 100, 0, 105); langMenu.Position = UDim2.new(1, -110, 0, 45); langMenu.BackgroundColor3 = Color3.fromRGB(25, 25, 25); langMenu.Visible = false; langMenu.ZIndex = 100; Instance.new("UICorner", langMenu).CornerRadius = UDim.new(0, 8)
+    local lmStroke = Instance.new("UIStroke", langMenu); lmStroke.Color = ThemeColor; lmStroke.Thickness = 1.5; table.insert(ThemedStrokes, lmStroke); table.insert(ThemedMenus, langMenu)
+
+    local function CreateLangOption(langName, code, yPos)
+        local b = Instance.new("TextButton", langMenu); b.Size = UDim2.new(1, -10, 0, 25); b.Position = UDim2.new(0, 5, 0, yPos); b.BackgroundColor3 = Color3.fromRGB(40, 40, 40); b.TextColor3 = Color3.new(1, 1, 1); b.Font = SafeFont; b.TextSize = 13; b.Text = langName; b.ZIndex = 101; Instance.new("UICorner", b)
+        b.MouseButton1Click:Connect(function() PlayClickSound(); langMenu.Visible = false; currentLang = code; SData["ScriptLanguage"] = currentLang; SaveAll(); for _, item in pairs(TranslatableUI) do if item.Obj and item.Obj.Parent then pcall(function() item.Obj[item.Prop] = GetTr(item.Key) end) end end; if ActiveTabBtn and ActiveTabFunc then for _,v in pairs(Content:GetChildren()) do if not v:IsA("UIListLayout") then v:Destroy() end end; ActiveTabFunc() end end)
+    end
+    CreateLangOption("العربية", "AR", 10); CreateLangOption("English", "EN", 40); CreateLangOption("Русский", "RU", 70)
+    langBtn.MouseButton1Click:Connect(function() PlayClickSound(); langMenu.Visible = not langMenu.Visible end)
+
+    local infoContainer = Instance.new("Frame", Content); infoContainer.Size = UDim2.new(1, 0, 0, 140); infoContainer.BackgroundTransparency = 1; infoContainer.ZIndex = 5
+    local infoLayout = Instance.new("UIGridLayout", infoContainer); infoLayout.CellSize = UDim2.new(0.31, 0, 0, 65); infoLayout.CellPadding = UDim2.new(0.035, 0, 0, 10); infoLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local function AddStatCard(icon, titleKey, valFunc, order)
+        local card = Instance.new("Frame", infoContainer); card.BackgroundColor3 = Color3.fromRGB(30, 30, 30); card.BackgroundTransparency = 0.4; card.LayoutOrder = order; Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8); table.insert(ThemedMenus, card)
+        local cardStr = Instance.new("UIStroke", card); cardStr.Color = ThemeColor; cardStr.Thickness = 1; cardStr.Transparency = 0.5; table.insert(ThemedStrokes, cardStr)
+        
+        local iconL = Instance.new("TextLabel", card); iconL.Size = UDim2.new(1, 0, 0, 20); iconL.Position = UDim2.new(0, 0, 0, 5); iconL.BackgroundTransparency = 1; iconL.Text = icon; iconL.TextSize = 16; iconL.ZIndex = 6
+        local titleL = Instance.new("TextLabel", card); titleL.Size = UDim2.new(1, 0, 0, 15); titleL.Position = UDim2.new(0, 0, 0, 25); titleL.BackgroundTransparency = 1; titleL.Text = GetTr(titleKey); titleL.TextColor3 = Color3.new(0.8,0.8,0.8); titleL.Font = SafeFont; titleL.TextSize = 11; titleL.ZIndex = 6
+        local valL = Instance.new("TextLabel", card); valL.Size = UDim2.new(1, 0, 0, 20); valL.Position = UDim2.new(0, 0, 0, 42); valL.BackgroundTransparency = 1; valL.TextColor3 = Color3.new(1,1,1); valL.Font = SafeFont; valL.TextSize = 13; valL.RichText = true; valL.ZIndex = 6
+        
+        task.spawn(function()
+            while task.wait(0.5) do
+                if not card.Parent then break end
+                pcall(function() valL.Text = "<b>" .. tostring(valFunc()) .. "</b>" end)
+            end
+        end)
+    end
+
+    AddStatCard("🆔", "الأيدي", function() return LP.UserId end, 1)
+    AddStatCard("📅", "عمر الحساب", function() return LP.AccountAge .. " " .. GetTr("يوم") end, 2)
+    AddStatCard("💎", "الاشتراك", function() return isVIP and "<font color='rgb(0,255,0)'>"..GetTr("فعال").."</font>" or "<font color='rgb(255,50,50)'>"..GetTr("غير فعال").."</font>" end, 3)
+    AddStatCard("❤️", "الصحة", function() return LP.Character and LP.Character:FindFirstChild("Humanoid") and math.floor(LP.Character.Humanoid.Health) or "0" end, 4)
+    AddStatCard("⚡", "السرعة", function() return LP.Character and LP.Character:FindFirstChild("Humanoid") and math.floor(LP.Character.Humanoid.WalkSpeed) or "16" end, 5)
+    
+    if not _G.AboudHub_SessionStartTime then _G.AboudHub_SessionStartTime = tick() end
+    local function GetLiveSessionTime()
+        local diff = tick() - _G.AboudHub_SessionStartTime; local h = math.floor(diff / 3600); local m = math.floor((diff % 3600) / 60); local s = math.floor(diff % 60)
+        if h > 0 then return string.format("%02d:%02d:%02d", h, m, s) else return string.format("%02d:%02d", m, s) end
+    end
+    AddStatCard("⏳", "التشغيل", GetLiveSessionTime, 6)
+
+    if Admins[LP.Name] then
+        local devViewBtn = Instance.new("TextButton", Content); devViewBtn.Size = UDim2.new(1, 0, 0, 40); devViewBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0); devViewBtn.TextColor3 = Color3.new(1, 1, 1); devViewBtn.Font = SafeFont; devViewBtn.TextSize = 14; devViewBtn.Text = GetTr("👑 رؤية رسائل الدعم (السجل الكامل) 👑"); devViewBtn.ZIndex = 4; Instance.new("UICorner", devViewBtn)
+        devViewBtn.MouseButton1Click:Connect(function() PlayClickSound(); ViewOverlay.Visible = true; pcall(RefreshMessages) end)
+
+        local devClearBtn = Instance.new("TextButton", Content); devClearBtn.Size = UDim2.new(1, 0, 0, 30); devClearBtn.BackgroundColor3 = Color3.fromRGB(80, 0, 0); devClearBtn.TextColor3 = Color3.new(1, 1, 1); devClearBtn.Font = SafeFont; devClearBtn.TextSize = 13; devClearBtn.Text = GetTr("🗑️ مسح سجل رسائل الدعم"); devClearBtn.ZIndex = 4; Instance.new("UICorner", devClearBtn)
+        devClearBtn.MouseButton1Click:Connect(function() PlayClickSound(); SupportMessages = {}; SaveSupportMessages(); pcall(RefreshMessages) end)
+    end
+end)
