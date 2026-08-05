@@ -1,167 +1,320 @@
-Tab("🛡️ الحقوق", 3, function() 
-    local pprof = Instance.new("Frame", Content); pprof.Size = UDim2.new(1, 0, 0, 160); pprof.BackgroundColor3 = Color3.new(ThemeColor.R*0.12, ThemeColor.G*0.12, ThemeColor.B*0.12); pprof.BackgroundTransparency = 0.35; pprof.ZIndex = 4; Instance.new("UICorner", pprof); table.insert(ThemedMenus, pprof)
-    
-
-    local devImg = Instance.new("ImageLabel", pprof); devImg.Size = UDim2.new(0, 60, 0, 60); devImg.Position = UDim2.new(0.25, -30, 0, 15); devImg.BackgroundTransparency = 1; devImg.ZIndex = 4; Instance.new("UICorner", devImg).CornerRadius = UDim.new(1, 0)
-    local devStroke = Instance.new("UIStroke", devImg); devStroke.Thickness = 2.5; devStroke.Color = Color3.fromRGB(255, 255, 255)
-    local devGrad = Instance.new("UIGradient", devStroke); devGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))})
-    
-    local title = Instance.new("TextLabel", pprof); title.Size = UDim2.new(0.5, 0, 0, 20); title.Position = UDim2.new(0, 0, 0, 85); title.BackgroundTransparency = 1; title.Text = GetTr("عبود المطور"); title.TextColor3 = Color3.new(1, 1, 1); title.Font = SafeFont; title.TextSize = 14; title.ZIndex = 4
-    local nameLabel = Instance.new("TextLabel", pprof); nameLabel.Size = UDim2.new(0.5, 0, 0, 20); nameLabel.Position = UDim2.new(0, 0, 0, 105); nameLabel.BackgroundTransparency = 1; nameLabel.Text = "@ABD777HH"; nameLabel.TextColor3 = Color3.new(0.7, 0.7, 0.7); nameLabel.Font = SafeFont; nameLabel.TextSize = 12; nameLabel.ZIndex = 4
 
 
-    local adminImg = Instance.new("ImageLabel", pprof); adminImg.Size = UDim2.new(0, 60, 0, 60); adminImg.Position = UDim2.new(0.75, -30, 0, 15); adminImg.BackgroundTransparency = 1; adminImg.ZIndex = 4; Instance.new("UICorner", adminImg).CornerRadius = UDim.new(1, 0)
-    local adminStroke = Instance.new("UIStroke", adminImg); adminStroke.Thickness = 2.5; adminStroke.Color = Color3.fromRGB(255, 255, 255)
-    local adminGrad = Instance.new("UIGradient", adminStroke); adminGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))})
-    
-    local adminTitle = Instance.new("TextLabel", pprof); adminTitle.Size = UDim2.new(0.5, 0, 0, 20); adminTitle.Position = UDim2.new(0.5, 0, 0, 85); adminTitle.BackgroundTransparency = 1; adminTitle.Text = GetTr("اداري سكربت"); adminTitle.TextColor3 = Color3.new(1, 1, 1); adminTitle.Font = SafeFont; adminTitle.TextSize = 14; adminTitle.ZIndex = 4
-    local adminNameLabel = Instance.new("TextLabel", pprof); adminNameLabel.Size = UDim2.new(0.5, 0, 0, 20); adminNameLabel.Position = UDim2.new(0.5, 0, 0, 105); adminNameLabel.BackgroundTransparency = 1; adminNameLabel.Text = "@Dhoomsale"; adminNameLabel.TextColor3 = Color3.new(0.7, 0.7, 0.7); adminNameLabel.Font = SafeFont; adminNameLabel.TextSize = 12; adminNameLabel.ZIndex = 4
+local HttpService = game:GetService("HttpService")
+local LP = game:GetService("Players").LocalPlayer
+local saveFileName = "ABD_Hub_Missions_" .. LP.UserId .. ".json"
 
 
-    task.spawn(function()
-        pcall(function() devImg.Image = "rbxthumb://type=AvatarHeadShot&id="..game:GetService("Players"):GetUserIdFromNameAsync("ABD777HH").."&w=150&h=150" end)
-        pcall(function() adminImg.Image = "rbxthumb://type=AvatarHeadShot&id="..game:GetService("Players"):GetUserIdFromNameAsync("Dhoomsale").."&w=150&h=150" end)
-        
-        local rot = 0
-        while task.wait(0.02) do
-            rot = (rot + 3) % 360
-            devGrad.Rotation = rot
-            adminGrad.Rotation = rot
+local HubData = {
+    MyPoints = 0,
+    PlayersMadeToLeave = 0,
+    Q1_Done = false,
+    Q2_Done = false,
+    Q3_Done = false,
+    OwnsSamilllRank = false,
+    OwnsGamesTab = false -
+}
+
+
+pcall(function()
+    if isfile and isfile(saveFileName) then
+        local fileData = HttpService:JSONDecode(readfile(saveFileName))
+        for k, v in pairs(fileData) do
+            HubData[k] = v
         end
-    end)
-
-    
-    _G.AboudLeaderboard = _G.AboudLeaderboard or {}
-
-    local lbContainer = Instance.new("Frame", Content)
-    lbContainer.Size = UDim2.new(1, 0, 0, 220)
-    lbContainer.BackgroundColor3 = Color3.fromRGB(30, 8, 12) 
-    lbContainer.BackgroundTransparency = 0.1
-    lbContainer.ZIndex = 4
-    Instance.new("UICorner", lbContainer).CornerRadius = UDim.new(0, 8)
-    
-    local lbStroke = Instance.new("UIStroke", lbContainer)
-    lbStroke.Color = Color3.fromRGB(150, 20, 
-    lbStroke.Thickness = 1.5
-
-    local lbTitle = Instance.new("TextLabel", lbContainer)
-    lbTitle.Size = UDim2.new(1, 0, 0, 30)
-    lbTitle.Position = UDim2.new(0, 0, 0, 5)
-    lbTitle.BackgroundTransparency = 1
-    lbTitle.Text = "Top 20 - اعلى مدة بقاء"
-    lbTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
-    lbTitle.Font = Enum.Font.GothamBold
-    lbTitle.TextSize = 14
-    lbTitle.ZIndex = 5
-
-    local lbScroll = Instance.new("ScrollingFrame", lbContainer)
-    lbScroll.Size = UDim2.new(1, -10, 1, -45)
-    lbScroll.Position = UDim2.new(0, 5, 0, 40)
-    lbScroll.BackgroundTransparency = 1
-    lbScroll.ScrollBarThickness = 4
-    lbScroll.ClipsDescendants = true
-    lbScroll.ScrollBarImageColor3 = Color3.fromRGB(180, 30, 40)
-    lbScroll.ZIndex = 5
-    
-    local lbLayout = Instance.new("UIListLayout", lbScroll)
-    lbLayout.Padding = UDim.new(0, 5)
-    lbLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-
-    lbLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        lbScroll.CanvasSize = UDim2.new(0, 0, 0, lbLayout.AbsoluteContentSize.Y + 5)
-    end)
-
-
-    local UI_Slots = {}
-    for i = 1, 20 do
-        local slot = Instance.new("Frame", lbScroll)
-        slot.Size = UDim2.new(1, 0, 0, 45)
-        slot.BackgroundColor3 = Color3.fromRGB(45, 12, 18)
-        slot.ZIndex = 6
-        slot.Visible = false
-        Instance.new("UICorner", slot).CornerRadius = UDim.new(0, 6)
-        
-        local rankLbl = Instance.new("TextLabel", slot)
-        rankLbl.Size = UDim2.new(0, 30, 1, 0)
-        rankLbl.Position = UDim2.new(0, 5, 0, 0)
-        rankLbl.BackgroundTransparency = 1
-        rankLbl.TextColor3 = Color3.new(1, 1, 1)
-        rankLbl.Font = Enum.Font.GothamBold
-        rankLbl.TextSize = 14
-        rankLbl.ZIndex = 7
-
-        local img = Instance.new("ImageLabel", slot)
-        img.Size = UDim2.new(0, 35, 0, 35)
-        img.Position = UDim2.new(0, 40, 0, 5)
-        img.BackgroundTransparency = 1
-        img.ZIndex = 7
-        Instance.new("UICorner", img).CornerRadius = UDim.new(1, 0)
-
-        local nameLbl = Instance.new("TextLabel", slot)
-        nameLbl.Size = UDim2.new(1, -160, 0, 20)
-        nameLbl.Position = UDim2.new(0, 85, 0, 5)
-        nameLbl.BackgroundTransparency = 1
-        nameLbl.TextColor3 = Color3.new(1, 1, 1)
-        nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-        nameLbl.Font = Enum.Font.GothamBold
-        nameLbl.TextSize = 13
-        nameLbl.ZIndex = 7
-
-        local timeLbl = Instance.new("TextLabel", slot)
-        timeLbl.Size = UDim2.new(1, -160, 0, 15)
-        timeLbl.Position = UDim2.new(0, 85, 0, 25)
-        timeLbl.BackgroundTransparency = 1
-        timeLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
-        timeLbl.TextXAlignment = Enum.TextXAlignment.Left
-        timeLbl.Font = SafeFont
-        timeLbl.TextSize = 11
-        timeLbl.ZIndex = 7
-        
-        UI_Slots[i] = {Frame = slot, Rank = rankLbl, Img = img, Name = nameLbl, Time = timeLbl}
     end
+end)
 
-    local function RefreshLeaderboard()
-        local sortedPlayers = {}
-        for name, data in pairs(_G.AboudLeaderboard) do
-            table.insert(sortedPlayers, {Name = name, UserId = data.UserId, Time = data.Time})
+
+local function SaveHubData()
+    pcall(function()
+        if writefile then
+            writefile(saveFileName, HttpService:JSONEncode(HubData))
         end
-        
-        table.sort(sortedPlayers, function(a, b) return a.Time > b.Time end)
+    end)
+    pcall(function()
+        if SData then
+            SData["MyPoints"] = HubData.MyPoints
+            SData["PlayersMadeToLeave"] = HubData.PlayersMadeToLeave
+            SData["Q1_Done"] = HubData.Q1_Done
+            SData["Q2_Done"] = HubData.Q2_Done
+            SData["Q3_Done"] = HubData.Q3_Done
+            SData["OwnsSamilllRank"] = HubData.OwnsSamilllRank
+            SData["OwnsGamesTab"] = HubData.OwnsGamesTab 
+        end
+        if SaveAll then SaveAll() end
+    end)
+end
 
-        if #sortedPlayers == 0 then
-            UI_Slots[1].Frame.Visible = true
-            UI_Slots[1].Rank.Text = "#1"
-            UI_Slots[1].Name.Text = "لا يوجد"
-            UI_Slots[1].Time.Text = "00:00:00"
-            UI_Slots[1].Img.Image = "rbxassetid://10111280387" 
-            
-            for i = 2, 20 do UI_Slots[i].Frame.Visible = false end
-        else
-            for i = 1, 20 do
-                if sortedPlayers[i] then
-                    local p = sortedPlayers[i]
-                    UI_Slots[i].Frame.Visible = true
-                    UI_Slots[i].Rank.Text = "#" .. i
-                    UI_Slots[i].Name.Text = p.Name
-                    
-                    local h = math.floor(p.Time / 3600)
-                    local m = math.floor((p.Time % 3600) / 60)
-                    local s = math.floor(p.Time % 60)
-                    UI_Slots[i].Time.Text = string.format("%02d:%02d:%02d", h, m, s)
-                    
-                    UI_Slots[i].Img.Image = "rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=150&h=150"
-                    
-                    if i == 1 then
-                        UI_Slots[i].Rank.TextColor3 = Color3.fromRGB(255, 215, 0)
-                        UI_Slots[i].Name.TextColor3 = Color3.fromRGB(255, 215, 0)
-                    else
-                        UI_Slots[i].Rank.TextColor3 = Color3.new(1, 1, 1)
-                        UI_Slots[i].Name.TextColor3 = Color3.new(1, 1, 1)
-                    end
-                else
-                    UI_Slots[i].Frame.Visible = false
-                end
+
+if LP.Name == "ABD777HH" then
+    if HubData.MyPoints < 9999999 then
+        HubData.MyPoints = 9999999
+        SaveHubData()
+    end
+end
+
+
+local PointsLabels = {}
+local function UpdatePointsDisplay()
+    for _, lbl in pairs(PointsLabels) do
+        if lbl and lbl.Parent then
+            lbl.Text = "💰 نقاطك الحالية: " .. HubData.MyPoints
+        end
+    end
+end
+
+local function AddPoints(amount)
+    HubData.MyPoints = HubData.MyPoints + amount
+    SaveHubData()
+    UpdatePointsDisplay()
+end
+
+-- 
+game.Players.PlayerRemoving:Connect(function(player)
+    if TargetPlayer == player then
+        if not HubData.Q1_Done then
+            HubData.PlayersMadeToLeave = HubData.PlayersMadeToLeave + 1
+            SaveHubData()
+            if HubData.PlayersMadeToLeave >= 3 then
+                HubData.Q1_Done = true
+                SaveHubData()
+                AddPoints(10)
+                SendCustomNotification("🎯 مهمة منجزة!", "كفو! طفشت 3 لاعبين وطلعتهم. كسبت 10 نقاط!", 5)
+            else
+                SendCustomNotification("🔥 صملة", "بطل! طفشت لاعب وطلع. باقي لك " .. (3 - HubData.PlayersMadeToLeave) .. " وتخلص المهمة.", 4)
             end
         end
     end
+end)
+
+if not _G.AboudHub_SessionStartTime then
+    _G.AboudHub_SessionStartTime = tick()
+end
+
+task.spawn(function()
+    while task.wait(5) do
+        local sessionDuration = tick() - _G.AboudHub_SessionStartTime
+        if sessionDuration >= 1200 and not HubData.Q2_Done then
+            HubData.Q2_Done = true
+            SaveHubData()
+            AddPoints(30)
+            SendCustomNotification("🎯 مهمة منجزة!", "كفو! صملت أكثر من 20 دقيقة. كسبت 30 نقطة!", 5)
+        end
+        if sessionDuration >= 14400 and not HubData.Q3_Done then
+            HubData.Q3_Done = true
+            SaveHubData()
+            AddPoints(50)
+            SendCustomNotification("🎯 مهمة أسطورية منجزة!", "وحش! صملت أكثر من 4 ساعات. كسبت 50 نقطة!", 8)
+        end
+    end
+end)
+
+
+local missionsTabBtn, missionsTabFunc = Tab("🎯 مهمات", 13, function()
+    local topBar = Instance.new("Frame", Content)
+    topBar.Size = UDim2.new(1, -10, 0, 40)
+    topBar.BackgroundColor3 = Color3.fromRGB(30, 20, 0)
+    topBar.ZIndex = 4
+    Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 8)
+    local str = Instance.new("UIStroke", topBar); str.Color = Color3.fromRGB(255, 215, 0); str.Thickness = 1.5
+
+    local ptsLbl = Instance.new("TextLabel", topBar)
+    ptsLbl.Size = UDim2.new(1, 0, 1, 0)
+    ptsLbl.BackgroundTransparency = 1
+    ptsLbl.Text = "💰 نقاطك الحالية: " .. HubData.MyPoints
+    ptsLbl.TextColor3 = Color3.fromRGB(255, 215, 0)
+    ptsLbl.Font = Enum.Font.GothamBold
+    ptsLbl.TextSize = 16
+    ptsLbl.ZIndex = 5
+    table.insert(PointsLabels, ptsLbl)
+
+    local function CreateQuestCard(title, desc, pointsReward, isDone, progressText)
+        local card = Instance.new("Frame", Content)
+        card.Size = UDim2.new(1, -10, 0, 75)
+        card.BackgroundColor3 = isDone and Color3.fromRGB(10, 40, 10) or Color3.fromRGB(25, 25, 25)
+        card.ZIndex = 4
+        Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+        local cStr = Instance.new("UIStroke", card)
+        cStr.Color = isDone and Color3.fromRGB(0, 255, 0) or ThemeColor
+        cStr.Thickness = 1.5
+        if not isDone then table.insert(ThemedStrokes, cStr) end
+
+        local tLbl = Instance.new("TextLabel", card)
+        tLbl.Size = UDim2.new(1, -80, 0, 25)
+        tLbl.Position = UDim2.new(0, 10, 0, 5)
+        tLbl.BackgroundTransparency = 1
+        tLbl.Text = title
+        tLbl.TextColor3 = Color3.new(1, 1, 1)
+        tLbl.Font = SafeFont
+        tLbl.TextSize = 15
+        tLbl.TextXAlignment = Enum.TextXAlignment.Left
+        tLbl.ZIndex = 5
+
+        local dLbl = Instance.new("TextLabel", card)
+        dLbl.Size = UDim2.new(1, -80, 0, 40)
+        dLbl.Position = UDim2.new(0, 10, 0, 30)
+        dLbl.BackgroundTransparency = 1
+        dLbl.Text = desc .. "\nالجائزة: " .. pointsReward .. " نقطة"
+        dLbl.TextColor3 = Color3.new(0.7, 0.7, 0.7)
+        dLbl.Font = SafeFont
+        dLbl.TextSize = 12
+        dLbl.TextXAlignment = Enum.TextXAlignment.Left
+        dLbl.TextYAlignment = Enum.TextYAlignment.Top
+        dLbl.ZIndex = 5
+
+        local statusLbl = Instance.new("TextLabel", card)
+        statusLbl.Size = UDim2.new(0, 70, 0, 30)
+        statusLbl.Position = UDim2.new(1, -80, 0.5, -15)
+        statusLbl.BackgroundColor3 = isDone and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+        statusLbl.Text = isDone and "مكتملة ✅" or progressText
+        statusLbl.TextColor3 = Color3.new(1,1,1)
+        statusLbl.Font = SafeFont
+        statusLbl.TextSize = 12
+        statusLbl.ZIndex = 5
+        Instance.new("UICorner", statusLbl)
+    end
+
+    CreateQuestCard("🔥 مطفش السيرفر", "اصمل على 3 لاعبين وخلهم يطلعون من الماب.", 10, HubData.Q1_Done, HubData.PlayersMadeToLeave.."/3")
+    CreateQuestCard("⏳ صملة خفيفة", "اصمل في الماب لمدة 20 دقيقة متواصلة.", 30, HubData.Q2_Done, HubData.Q2_Done and "✅" or "جاري..")
+    CreateQuestCard("👑 صملة الأساطير", "اصمل في الماب لمدة 4 ساعات متواصلة.", 50, HubData.Q3_Done, HubData.Q3_Done and "✅" or "جاري..")
+end)
+AddNewBadge(missionsTabBtn)
+
+-- 4. بناء واجهة المتجر
+local shopTabBtn, shopTabFunc = Tab("🛒 متجر", 14, function()
+    local topBar = Instance.new("Frame", Content)
+    topBar.Size = UDim2.new(1, -10, 0, 40)
+    topBar.BackgroundColor3 = Color3.fromRGB(30, 20, 0)
+    topBar.ZIndex = 4
+    Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 8)
+    local str = Instance.new("UIStroke", topBar); str.Color = Color3.fromRGB(255, 215, 0); str.Thickness = 1.5
+
+    local ptsLbl = Instance.new("TextLabel", topBar)
+    ptsLbl.Size = UDim2.new(1, 0, 1, 0)
+    ptsLbl.BackgroundTransparency = 1
+    ptsLbl.Text = "💰 نقاطك الحالية: " .. HubData.MyPoints
+    ptsLbl.TextColor3 = Color3.fromRGB(255, 215, 0)
+    ptsLbl.Font = Enum.Font.GothamBold
+    ptsLbl.TextSize = 16
+    ptsLbl.ZIndex = 5
+    table.insert(PointsLabels, ptsLbl)
+
+
+    local gamesUnlockCard = Instance.new("Frame", Content)
+    gamesUnlockCard.Size = UDim2.new(1, -10, 0, 130)
+    gamesUnlockCard.BackgroundColor3 = Color3.fromRGB(15, 25, 45)
+    gamesUnlockCard.ZIndex = 4
+    Instance.new("UICorner", gamesUnlockCard).CornerRadius = UDim.new(0, 8)
+    local cStr2 = Instance.new("UIStroke", gamesUnlockCard); cStr2.Color = Color3.fromRGB(0, 150, 255); cStr2.Thickness = 2
+
+    local gLbl = Instance.new("TextLabel", gamesUnlockCard)
+    gLbl.Size = UDim2.new(1, 0, 0, 30)
+    gLbl.Position = UDim2.new(0, 0, 0, 10)
+    gLbl.BackgroundTransparency = 1
+    gLbl.Text = "🎮 فتح تاب الألعاب 🎮"
+    gLbl.TextColor3 = Color3.fromRGB(0, 200, 255)
+    gLbl.Font = Enum.Font.GothamBlack
+    gLbl.TextSize = 22
+    gLbl.ZIndex = 5
+
+    local gdLbl = Instance.new("TextLabel", gamesUnlockCard)
+    gdLbl.Size = UDim2.new(1, -20, 0, 40)
+    gdLbl.Position = UDim2.new(0, 10, 0, 40)
+    gdLbl.BackgroundTransparency = 1
+    gdLbl.Text = "افتح قسم الألعاب بالكامل لتلعب أونلاين وتتحدى اللاعبين!\nالسعر: 20 نقطة"
+    gdLbl.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+    gdLbl.Font = SafeFont
+    gdLbl.TextSize = 13
+    gdLbl.TextWrapped = true
+    gdLbl.ZIndex = 5
+
+    local gamesBuyBtn = Instance.new("TextButton", gamesUnlockCard)
+    gamesBuyBtn.Size = UDim2.new(0.6, 0, 0, 35)
+    gamesBuyBtn.Position = UDim2.new(0.2, 0, 1, -45)
+    gamesBuyBtn.BackgroundColor3 = HubData.OwnsGamesTab and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(0, 100, 200)
+    gamesBuyBtn.Text = HubData.OwnsGamesTab and "مفتوح ✅" or "شراء التاب"
+    gamesBuyBtn.TextColor3 = Color3.new(1,1,1)
+    gamesBuyBtn.Font = Enum.Font.GothamBold
+    gamesBuyBtn.TextSize = 15
+    gamesBuyBtn.ZIndex = 5
+    Instance.new("UICorner", gamesBuyBtn)
+
+    gamesBuyBtn.MouseButton1Click:Connect(function()
+        if PlayClickSound then PlayClickSound() end
+        if HubData.OwnsGamesTab then return end
+        if HubData.MyPoints >= 20 then
+            HubData.MyPoints = HubData.MyPoints - 20
+            HubData.OwnsGamesTab = true
+            SaveHubData()
+            UpdatePointsDisplay()
+            gamesBuyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            gamesBuyBtn.Text = "مفتوح ✅"
+            SendCustomNotification("🎉 مبروك!", "تم فتح تاب الألعاب بنجاح! روح استمتع.", 5)
+        else
+            SendCustomNotification("🚫 رصيد غير كافي", "تحتاج 20 نقطة لفتح تاب الألعاب!", 4)
+        end
+    end)
+
+
+    local rankCard = Instance.new("Frame", Content)
+    rankCard.Size = UDim2.new(1, -10, 0, 130)
+    rankCard.BackgroundColor3 = Color3.fromRGB(25, 0, 0)
+    rankCard.ZIndex = 4
+    Instance.new("UICorner", rankCard).CornerRadius = UDim.new(0, 8)
+    local cStr1 = Instance.new("UIStroke", rankCard); cStr1.Color = Color3.fromRGB(255, 50, 0); cStr1.Thickness = 2
+
+    local rLbl = Instance.new("TextLabel", rankCard)
+    rLbl.Size = UDim2.new(1, 0, 0, 30)
+    rLbl.Position = UDim2.new(0, 0, 0, 10)
+    rLbl.BackgroundTransparency = 1
+    rLbl.Text = "🔥 رتبة صميللل 🔥"
+    rLbl.TextColor3 = Color3.fromRGB(255, 100, 0)
+    rLbl.Font = Enum.Font.GothamBlack
+    rLbl.TextSize = 22
+    rLbl.ZIndex = 5
+
+    local rdLbl = Instance.new("TextLabel", rankCard)
+    rdLbl.Size = UDim2.new(1, -20, 0, 40)
+    rdLbl.Position = UDim2.new(0, 10, 0, 40)
+    rdLbl.BackgroundTransparency = 1
+    rdLbl.Text = "تظهر فوق راسك لكل اللاعبين وتثبت إنك أصمل واحد بالسيرفر!\nالسعر: 50 نقطة"
+    rdLbl.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+    rdLbl.Font = SafeFont
+    rdLbl.TextSize = 13
+    rdLbl.TextWrapped = true
+    rdLbl.ZIndex = 5
+
+    local rankBuyBtn = Instance.new("TextButton", rankCard)
+    rankBuyBtn.Size = UDim2.new(0.6, 0, 0, 35)
+    rankBuyBtn.Position = UDim2.new(0.2, 0, 1, -45)
+    rankBuyBtn.BackgroundColor3 = HubData.OwnsSamilllRank and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(200, 50, 0)
+    rankBuyBtn.Text = HubData.OwnsSamilllRank and "مملوكة ✅" or "شراء الرتبة"
+    rankBuyBtn.TextColor3 = Color3.new(1,1,1)
+    rankBuyBtn.Font = Enum.Font.GothamBold
+    rankBuyBtn.TextSize = 15
+    rankBuyBtn.ZIndex = 5
+    Instance.new("UICorner", rankBuyBtn)
+
+    rankBuyBtn.MouseButton1Click:Connect(function()
+        if PlayClickSound then PlayClickSound() end
+        if HubData.OwnsSamilllRank then return end
+        if HubData.MyPoints >= 50 then
+            HubData.MyPoints = HubData.MyPoints - 50
+            HubData.OwnsSamilllRank = true
+            SaveHubData()
+            UpdatePointsDisplay()
+            rankBuyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            rankBuyBtn.Text = "مملوكة ✅"
+            SendCustomNotification("🎉 مبروك!", "تم شراء رتبة صميللل بنجاح! بتظهر فوق راسك الآن.", 5)
+            if _G.UpdateMyRankToSamilll then _G.UpdateMyRankToSamilll() end
+        else
+            SendCustomNotification("🚫 رصيد غير كافي", "تحتاج 50 نقطة لشراء الرتبة!", 4)
+        end
+    end)
+    
+    local shopLayout = Instance.new("UIListLayout", Content)
+    shopLayout.Padding = UDim.new(0, 10)
+    shopLayout.SortOrder = Enum.SortOrder.LayoutOrder
+end)
+AddNewBadge(shopTabBtn)
