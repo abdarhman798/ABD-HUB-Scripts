@@ -1,77 +1,167 @@
-Tab("🏠 قائمة رئيسية", 2, function()
-    local welcomeTxt = Instance.new("TextLabel", Content); welcomeTxt.Size = UDim2.new(1, 0, 0, 30); welcomeTxt.BackgroundTransparency = 1; welcomeTxt.Text = "أهلاً بك، " .. LP.DisplayName .. " 👑"; welcomeTxt.TextColor3 = Color3.new(1,1,1); welcomeTxt.Font = SafeFont; welcomeTxt.TextSize = 18; welcomeTxt.TextXAlignment = Enum.TextXAlignment.Left; welcomeTxt.ZIndex = 4
+Tab("🛡️ الحقوق", 3, function() 
+    local pprof = Instance.new("Frame", Content); pprof.Size = UDim2.new(1, 0, 0, 160); pprof.BackgroundColor3 = Color3.new(ThemeColor.R*0.12, ThemeColor.G*0.12, ThemeColor.B*0.12); pprof.BackgroundTransparency = 0.35; pprof.ZIndex = 4; Instance.new("UICorner", pprof); table.insert(ThemedMenus, pprof)
     
-    local headerBG = Instance.new("Frame", Content); headerBG.Size = UDim2.new(1, 0, 0, 90); headerBG.BackgroundColor3 = Color3.fromRGB(20, 20, 20); headerBG.BackgroundTransparency = 0.5; headerBG.ZIndex = 4; Instance.new("UICorner", headerBG).CornerRadius = UDim.new(0, 10); table.insert(ThemedMenus, headerBG)
-    local hdStroke = Instance.new("UIStroke", headerBG); hdStroke.Color = ThemeColor; hdStroke.Thickness = 1.5; table.insert(ThemedStrokes, hdStroke)
 
-    local pimg = Instance.new("ImageLabel", headerBG); pimg.Size = UDim2.new(0, 65, 0, 65); pimg.Position = UDim2.new(0, 15, 0.5, -32.5); pimg.ZIndex = 5; Instance.new("UICorner", pimg).CornerRadius = UDim.new(1, 0); pimg.Image = "rbxthumb://type=AvatarHeadShot&id="..LP.UserId.."&w=150&h=150"
-    local imgStroke = Instance.new("UIStroke", pimg); imgStroke.Color = ThemeColor; imgStroke.Thickness = 2; table.insert(ThemedStrokes, imgStroke)
-
-    local isVIP = VIPSupporters[LP.Name]
-    local badge = Instance.new("TextLabel", pimg); badge.Size = UDim2.new(0, 22, 0, 22); badge.Position = UDim2.new(1, -15, 1, -15); badge.BackgroundColor3 = isVIP and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(0, 150, 255); badge.Text = isVIP and "👑" or "✔"; badge.TextColor3 = Color3.new(1,1,1); badge.Font = SafeFont; badge.TextSize = 12; badge.ZIndex = 6; Instance.new("UICorner", badge).CornerRadius = UDim.new(1, 0); local badgeStroke = Instance.new("UIStroke", badge); badgeStroke.Color = Color3.new(1,1,1); badgeStroke.Thickness = 1
-
-    local nameL = Instance.new("TextLabel", headerBG); nameL.Size = UDim2.new(1, -100, 0, 25); nameL.Position = UDim2.new(0, 95, 0, 20); nameL.BackgroundTransparency = 1; nameL.Text = LP.DisplayName; nameL.TextColor3 = ThemeColor; nameL.Font = SafeFont; nameL.TextSize = 20; nameL.TextXAlignment = Enum.TextXAlignment.Left; nameL.ZIndex = 5; table.insert(ThemedTexts, nameL)
-    local userL = Instance.new("TextLabel", headerBG); userL.Size = UDim2.new(1, -100, 0, 20); userL.Position = UDim2.new(0, 95, 0, 45); userL.BackgroundTransparency = 1; userL.Text = "@" .. LP.Name; userL.TextColor3 = Color3.new(0.7, 0.7, 0.7); userL.Font = SafeFont; userL.TextSize = 13; userL.TextXAlignment = Enum.TextXAlignment.Left; userL.ZIndex = 5
-
-    local supBtn = Instance.new("ImageButton", headerBG); supBtn.Size = UDim2.new(0, 25, 0, 25); supBtn.Position = UDim2.new(1, -35, 0, 15); supBtn.BackgroundTransparency = 1; supBtn.Image = "rbxassetid://7733674079"; supBtn.ImageColor3 = ThemeColor; supBtn.ZIndex = 6; table.insert(GlowEffects, supBtn)
-    supBtn.MouseButton1Click:Connect(function() PlayClickSound(); SupportOverlay.Visible = true end)
-
-    local langBtn = Instance.new("TextButton", headerBG); langBtn.Size = UDim2.new(0, 20, 0, 20); langBtn.Position = UDim2.new(1, -65, 0, 18); langBtn.BackgroundTransparency = 1; langBtn.Text = "🌐"; langBtn.TextSize = 18; langBtn.ZIndex = 6
-    local discordSmallBtn = Instance.new("ImageButton", headerBG); discordSmallBtn.Size = UDim2.new(0, 25, 0, 25); discordSmallBtn.Position = UDim2.new(1, -67, 0, 45); discordSmallBtn.BackgroundTransparency = 1; discordSmallBtn.Image = "rbxassetid://115465566081051"; discordSmallBtn.ScaleType = Enum.ScaleType.Fit; discordSmallBtn.ZIndex = 6
+    local devImg = Instance.new("ImageLabel", pprof); devImg.Size = UDim2.new(0, 60, 0, 60); devImg.Position = UDim2.new(0.25, -30, 0, 15); devImg.BackgroundTransparency = 1; devImg.ZIndex = 4; Instance.new("UICorner", devImg).CornerRadius = UDim.new(1, 0)
+    local devStroke = Instance.new("UIStroke", devImg); devStroke.Thickness = 2.5; devStroke.Color = Color3.fromRGB(255, 255, 255)
+    local devGrad = Instance.new("UIGradient", devStroke); devGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))})
     
-    discordSmallBtn.MouseButton1Click:Connect(function() 
-        PlayClickSound(); 
-        pcall(function() setclipboard("\104\116\116\112\115\58\47\47\100\105\115\99\111\114\100\46\103\103\47\98\112\74\71\56\101\112\56\85") end); 
-        SendCustomNotification("✅", GetTr("تم نسخ رابط الديسكورد! اذهب للمتصفح والصقه."), 6) 
+    local title = Instance.new("TextLabel", pprof); title.Size = UDim2.new(0.5, 0, 0, 20); title.Position = UDim2.new(0, 0, 0, 85); title.BackgroundTransparency = 1; title.Text = GetTr("عبود المطور"); title.TextColor3 = Color3.new(1, 1, 1); title.Font = SafeFont; title.TextSize = 14; title.ZIndex = 4
+    local nameLabel = Instance.new("TextLabel", pprof); nameLabel.Size = UDim2.new(0.5, 0, 0, 20); nameLabel.Position = UDim2.new(0, 0, 0, 105); nameLabel.BackgroundTransparency = 1; nameLabel.Text = "@ABD777HH"; nameLabel.TextColor3 = Color3.new(0.7, 0.7, 0.7); nameLabel.Font = SafeFont; nameLabel.TextSize = 12; nameLabel.ZIndex = 4
+
+
+    local adminImg = Instance.new("ImageLabel", pprof); adminImg.Size = UDim2.new(0, 60, 0, 60); adminImg.Position = UDim2.new(0.75, -30, 0, 15); adminImg.BackgroundTransparency = 1; adminImg.ZIndex = 4; Instance.new("UICorner", adminImg).CornerRadius = UDim.new(1, 0)
+    local adminStroke = Instance.new("UIStroke", adminImg); adminStroke.Thickness = 2.5; adminStroke.Color = Color3.fromRGB(255, 255, 255)
+    local adminGrad = Instance.new("UIGradient", adminStroke); adminGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)), ColorSequenceKeypoint.new(0.6, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))})
+    
+    local adminTitle = Instance.new("TextLabel", pprof); adminTitle.Size = UDim2.new(0.5, 0, 0, 20); adminTitle.Position = UDim2.new(0.5, 0, 0, 85); adminTitle.BackgroundTransparency = 1; adminTitle.Text = GetTr("اداري سكربت"); adminTitle.TextColor3 = Color3.new(1, 1, 1); adminTitle.Font = SafeFont; adminTitle.TextSize = 14; adminTitle.ZIndex = 4
+    local adminNameLabel = Instance.new("TextLabel", pprof); adminNameLabel.Size = UDim2.new(0.5, 0, 0, 20); adminNameLabel.Position = UDim2.new(0.5, 0, 0, 105); adminNameLabel.BackgroundTransparency = 1; adminNameLabel.Text = "@Dhoomsale"; adminNameLabel.TextColor3 = Color3.new(0.7, 0.7, 0.7); adminNameLabel.Font = SafeFont; adminNameLabel.TextSize = 12; adminNameLabel.ZIndex = 4
+
+
+    task.spawn(function()
+        pcall(function() devImg.Image = "rbxthumb://type=AvatarHeadShot&id="..game:GetService("Players"):GetUserIdFromNameAsync("ABD777HH").."&w=150&h=150" end)
+        pcall(function() adminImg.Image = "rbxthumb://type=AvatarHeadShot&id="..game:GetService("Players"):GetUserIdFromNameAsync("Dhoomsale").."&w=150&h=150" end)
+        
+        local rot = 0
+        while task.wait(0.02) do
+            rot = (rot + 3) % 360
+            devGrad.Rotation = rot
+            adminGrad.Rotation = rot
+        end
     end)
 
-    local langMenu = Instance.new("Frame", headerBG); langMenu.Size = UDim2.new(0, 100, 0, 105); langMenu.Position = UDim2.new(1, -110, 0, 45); langMenu.BackgroundColor3 = Color3.fromRGB(25, 25, 25); langMenu.Visible = false; langMenu.ZIndex = 100; Instance.new("UICorner", langMenu).CornerRadius = UDim.new(0, 8)
-    local lmStroke = Instance.new("UIStroke", langMenu); lmStroke.Color = ThemeColor; lmStroke.Thickness = 1.5; table.insert(ThemedStrokes, lmStroke); table.insert(ThemedMenus, langMenu)
-
-    local function CreateLangOption(langName, code, yPos)
-        local b = Instance.new("TextButton", langMenu); b.Size = UDim2.new(1, -10, 0, 25); b.Position = UDim2.new(0, 5, 0, yPos); b.BackgroundColor3 = Color3.fromRGB(40, 40, 40); b.TextColor3 = Color3.new(1, 1, 1); b.Font = SafeFont; b.TextSize = 13; b.Text = langName; b.ZIndex = 101; Instance.new("UICorner", b)
-        b.MouseButton1Click:Connect(function() PlayClickSound(); langMenu.Visible = false; currentLang = code; SData["ScriptLanguage"] = currentLang; SaveAll(); for _, item in pairs(TranslatableUI) do if item.Obj and item.Obj.Parent then pcall(function() item.Obj[item.Prop] = GetTr(item.Key) end) end end; if ActiveTabBtn and ActiveTabFunc then for _,v in pairs(Content:GetChildren()) do if not v:IsA("UIListLayout") then v:Destroy() end end; ActiveTabFunc() end end)
-    end
-    CreateLangOption("العربية", "AR", 10); CreateLangOption("English", "EN", 40); CreateLangOption("Русский", "RU", 70)
-    langBtn.MouseButton1Click:Connect(function() PlayClickSound(); langMenu.Visible = not langMenu.Visible end)
-
-    local infoContainer = Instance.new("Frame", Content); infoContainer.Size = UDim2.new(1, 0, 0, 140); infoContainer.BackgroundTransparency = 1; infoContainer.ZIndex = 5
-    local infoLayout = Instance.new("UIGridLayout", infoContainer); infoLayout.CellSize = UDim2.new(0.31, 0, 0, 65); infoLayout.CellPadding = UDim2.new(0.035, 0, 0, 10); infoLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-    local function AddStatCard(icon, titleKey, valFunc, order)
-        local card = Instance.new("Frame", infoContainer); card.BackgroundColor3 = Color3.fromRGB(30, 30, 30); card.BackgroundTransparency = 0.4; card.LayoutOrder = order; Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8); table.insert(ThemedMenus, card)
-        local cardStr = Instance.new("UIStroke", card); cardStr.Color = ThemeColor; cardStr.Thickness = 1; cardStr.Transparency = 0.5; table.insert(ThemedStrokes, cardStr)
-        
-        local iconL = Instance.new("TextLabel", card); iconL.Size = UDim2.new(1, 0, 0, 20); iconL.Position = UDim2.new(0, 0, 0, 5); iconL.BackgroundTransparency = 1; iconL.Text = icon; iconL.TextSize = 16; iconL.ZIndex = 6
-        local titleL = Instance.new("TextLabel", card); titleL.Size = UDim2.new(1, 0, 0, 15); titleL.Position = UDim2.new(0, 0, 0, 25); titleL.BackgroundTransparency = 1; titleL.Text = GetTr(titleKey); titleL.TextColor3 = Color3.new(0.8,0.8,0.8); titleL.Font = SafeFont; titleL.TextSize = 11; titleL.ZIndex = 6
-        local valL = Instance.new("TextLabel", card); valL.Size = UDim2.new(1, 0, 0, 20); valL.Position = UDim2.new(0, 0, 0, 42); valL.BackgroundTransparency = 1; valL.TextColor3 = Color3.new(1,1,1); valL.Font = SafeFont; valL.TextSize = 13; valL.RichText = true; valL.ZIndex = 6
-        
-        task.spawn(function()
-            while task.wait(0.5) do
-                if not card.Parent then break end
-                pcall(function() valL.Text = "<b>" .. tostring(valFunc()) .. "</b>" end)
-            end
-        end)
-    end
-
-    AddStatCard("🆔", "الأيدي", function() return LP.UserId end, 1)
-    AddStatCard("📅", "عمر الحساب", function() return LP.AccountAge .. " " .. GetTr("يوم") end, 2)
-    AddStatCard("💎", "الاشتراك", function() return isVIP and "<font color='rgb(0,255,0)'>"..GetTr("فعال").."</font>" or "<font color='rgb(255,50,50)'>"..GetTr("غير فعال").."</font>" end, 3)
-    AddStatCard("❤️", "الصحة", function() return LP.Character and LP.Character:FindFirstChild("Humanoid") and math.floor(LP.Character.Humanoid.Health) or "0" end, 4)
-    AddStatCard("⚡", "السرعة", function() return LP.Character and LP.Character:FindFirstChild("Humanoid") and math.floor(LP.Character.Humanoid.WalkSpeed) or "16" end, 5)
     
-    if not _G.AboudHub_SessionStartTime then _G.AboudHub_SessionStartTime = tick() end
-    local function GetLiveSessionTime()
-        local diff = tick() - _G.AboudHub_SessionStartTime; local h = math.floor(diff / 3600); local m = math.floor((diff % 3600) / 60); local s = math.floor(diff % 60)
-        if h > 0 then return string.format("%02d:%02d:%02d", h, m, s) else return string.format("%02d:%02d", m, s) end
-    end
-    AddStatCard("⏳", "التشغيل", GetLiveSessionTime, 6)
+    _G.AboudLeaderboard = _G.AboudLeaderboard or {}
 
-    if Admins[LP.Name] then
-        local devViewBtn = Instance.new("TextButton", Content); devViewBtn.Size = UDim2.new(1, 0, 0, 40); devViewBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0); devViewBtn.TextColor3 = Color3.new(1, 1, 1); devViewBtn.Font = SafeFont; devViewBtn.TextSize = 14; devViewBtn.Text = GetTr("👑 رؤية رسائل الدعم (السجل الكامل) 👑"); devViewBtn.ZIndex = 4; Instance.new("UICorner", devViewBtn)
-        devViewBtn.MouseButton1Click:Connect(function() PlayClickSound(); ViewOverlay.Visible = true; pcall(RefreshMessages) end)
+    local lbContainer = Instance.new("Frame", Content)
+    lbContainer.Size = UDim2.new(1, 0, 0, 220)
+    lbContainer.BackgroundColor3 = Color3.fromRGB(30, 8, 12) 
+    lbContainer.BackgroundTransparency = 0.1
+    lbContainer.ZIndex = 4
+    Instance.new("UICorner", lbContainer).CornerRadius = UDim.new(0, 8)
+    
+    local lbStroke = Instance.new("UIStroke", lbContainer)
+    lbStroke.Color = Color3.fromRGB(150, 20, 
+    lbStroke.Thickness = 1.5
 
-        local devClearBtn = Instance.new("TextButton", Content); devClearBtn.Size = UDim2.new(1, 0, 0, 30); devClearBtn.BackgroundColor3 = Color3.fromRGB(80, 0, 0); devClearBtn.TextColor3 = Color3.new(1, 1, 1); devClearBtn.Font = SafeFont; devClearBtn.TextSize = 13; devClearBtn.Text = GetTr("🗑️ مسح سجل رسائل الدعم"); devClearBtn.ZIndex = 4; Instance.new("UICorner", devClearBtn)
-        devClearBtn.MouseButton1Click:Connect(function() PlayClickSound(); SupportMessages = {}; SaveSupportMessages(); pcall(RefreshMessages) end)
+    local lbTitle = Instance.new("TextLabel", lbContainer)
+    lbTitle.Size = UDim2.new(1, 0, 0, 30)
+    lbTitle.Position = UDim2.new(0, 0, 0, 5)
+    lbTitle.BackgroundTransparency = 1
+    lbTitle.Text = "Top 20 - اعلى مدة بقاء"
+    lbTitle.TextColor3 = Color3.fromRGB(255, 100, 100)
+    lbTitle.Font = Enum.Font.GothamBold
+    lbTitle.TextSize = 14
+    lbTitle.ZIndex = 5
+
+    local lbScroll = Instance.new("ScrollingFrame", lbContainer)
+    lbScroll.Size = UDim2.new(1, -10, 1, -45)
+    lbScroll.Position = UDim2.new(0, 5, 0, 40)
+    lbScroll.BackgroundTransparency = 1
+    lbScroll.ScrollBarThickness = 4
+    lbScroll.ClipsDescendants = true
+    lbScroll.ScrollBarImageColor3 = Color3.fromRGB(180, 30, 40)
+    lbScroll.ZIndex = 5
+    
+    local lbLayout = Instance.new("UIListLayout", lbScroll)
+    lbLayout.Padding = UDim.new(0, 5)
+    lbLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+
+    lbLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        lbScroll.CanvasSize = UDim2.new(0, 0, 0, lbLayout.AbsoluteContentSize.Y + 5)
+    end)
+
+
+    local UI_Slots = {}
+    for i = 1, 20 do
+        local slot = Instance.new("Frame", lbScroll)
+        slot.Size = UDim2.new(1, 0, 0, 45)
+        slot.BackgroundColor3 = Color3.fromRGB(45, 12, 18)
+        slot.ZIndex = 6
+        slot.Visible = false
+        Instance.new("UICorner", slot).CornerRadius = UDim.new(0, 6)
+        
+        local rankLbl = Instance.new("TextLabel", slot)
+        rankLbl.Size = UDim2.new(0, 30, 1, 0)
+        rankLbl.Position = UDim2.new(0, 5, 0, 0)
+        rankLbl.BackgroundTransparency = 1
+        rankLbl.TextColor3 = Color3.new(1, 1, 1)
+        rankLbl.Font = Enum.Font.GothamBold
+        rankLbl.TextSize = 14
+        rankLbl.ZIndex = 7
+
+        local img = Instance.new("ImageLabel", slot)
+        img.Size = UDim2.new(0, 35, 0, 35)
+        img.Position = UDim2.new(0, 40, 0, 5)
+        img.BackgroundTransparency = 1
+        img.ZIndex = 7
+        Instance.new("UICorner", img).CornerRadius = UDim.new(1, 0)
+
+        local nameLbl = Instance.new("TextLabel", slot)
+        nameLbl.Size = UDim2.new(1, -160, 0, 20)
+        nameLbl.Position = UDim2.new(0, 85, 0, 5)
+        nameLbl.BackgroundTransparency = 1
+        nameLbl.TextColor3 = Color3.new(1, 1, 1)
+        nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+        nameLbl.Font = Enum.Font.GothamBold
+        nameLbl.TextSize = 13
+        nameLbl.ZIndex = 7
+
+        local timeLbl = Instance.new("TextLabel", slot)
+        timeLbl.Size = UDim2.new(1, -160, 0, 15)
+        timeLbl.Position = UDim2.new(0, 85, 0, 25)
+        timeLbl.BackgroundTransparency = 1
+        timeLbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+        timeLbl.TextXAlignment = Enum.TextXAlignment.Left
+        timeLbl.Font = SafeFont
+        timeLbl.TextSize = 11
+        timeLbl.ZIndex = 7
+        
+        UI_Slots[i] = {Frame = slot, Rank = rankLbl, Img = img, Name = nameLbl, Time = timeLbl}
     end
-end)
+
+    local function RefreshLeaderboard()
+        local sortedPlayers = {}
+        for name, data in pairs(_G.AboudLeaderboard) do
+            table.insert(sortedPlayers, {Name = name, UserId = data.UserId, Time = data.Time})
+        end
+        
+        table.sort(sortedPlayers, function(a, b) return a.Time > b.Time end)
+
+        if #sortedPlayers == 0 then
+            UI_Slots[1].Frame.Visible = true
+            UI_Slots[1].Rank.Text = "#1"
+            UI_Slots[1].Name.Text = "لا يوجد"
+            UI_Slots[1].Time.Text = "00:00:00"
+            UI_Slots[1].Img.Image = "rbxassetid://10111280387" 
+            
+            for i = 2, 20 do UI_Slots[i].Frame.Visible = false end
+        else
+            for i = 1, 20 do
+                if sortedPlayers[i] then
+                    local p = sortedPlayers[i]
+                    UI_Slots[i].Frame.Visible = true
+                    UI_Slots[i].Rank.Text = "#" .. i
+                    UI_Slots[i].Name.Text = p.Name
+                    
+                    local h = math.floor(p.Time / 3600)
+                    local m = math.floor((p.Time % 3600) / 60)
+                    local s = math.floor(p.Time % 60)
+                    UI_Slots[i].Time.Text = string.format("%02d:%02d:%02d", h, m, s)
+                    
+                    UI_Slots[i].Img.Image = "rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=150&h=150"
+                    
+                    if i == 1 then
+                        UI_Slots[i].Rank.TextColor3 = Color3.fromRGB(255, 215, 0)
+                        UI_Slots[i].Name.TextColor3 = Color3.fromRGB(255, 215, 0)
+                    else
+                        UI_Slots[i].Rank.TextColor3 = Color3.new(1, 1, 1)
+                        UI_Slots[i].Name.TextColor3 = Color3.new(1, 1, 1)
+                    end
+                else
+                    UI_Slots[i].Frame.Visible = false
+                end
+            end
+        end
+    end
