@@ -1,320 +1,265 @@
+local featuresTabBtn = Tab("🎡 المميزات", 5, function()
+    AddToggleWithTextBox(Content, " تفعيل السرعة:", isSpeed, SpeedValue, "سرعة", Color3.new(0, 1, 0), 
+        function(state) isSpeed = state; SData["Speed"]=state; SaveAll(); if not state and LP.Character then LP.Character.Humanoid.WalkSpeed = 16 end end,
+        function(val) SpeedValue = val; SData["SpeedValue"] = val; SaveAll() end
+    )
+    AddToggleWithTextBox(Content, "طيران (Fly):", isFly, FlySpeed, "طيران", Color3.new(0, 1, 1), 
+        function(state) isFly = state; SData["Fly"]=state; SaveAll() end,
+        function(val) FlySpeed = val; SData["FlySpeed"] = val; SaveAll() end
+    )
+    
+    AddOnOffBtn(Content, "دوران:", isSpin, function(state) isSpin = state; SData["Spin"]=state; SaveAll() end); 
+    AddOnOffBtn(Content, "نكليب:", isNoclip, function(state) isNoclip = state; SData["Noclip"]=state; SaveAll() end); 
+    AddOnOffBtn(Content, " ESP:", isESP, function(state) isESP = state; SData["ESP"]=state; SaveAll() end)
 
-
-local HttpService = game:GetService("HttpService")
-local LP = game:GetService("Players").LocalPlayer
-local saveFileName = "ABD_Hub_Missions_" .. LP.UserId .. ".json"
-
-
-local HubData = {
-    MyPoints = 0,
-    PlayersMadeToLeave = 0,
-    Q1_Done = false,
-    Q2_Done = false,
-    Q3_Done = false,
-    OwnsSamilllRank = false,
-    OwnsGamesTab = false -
-}
-
-
-pcall(function()
-    if isfile and isfile(saveFileName) then
-        local fileData = HttpService:JSONDecode(readfile(saveFileName))
-        for k, v in pairs(fileData) do
-            HubData[k] = v
-        end
-    end
-end)
-
-
-local function SaveHubData()
-    pcall(function()
-        if writefile then
-            writefile(saveFileName, HttpService:JSONEncode(HubData))
-        end
-    end)
-    pcall(function()
-        if SData then
-            SData["MyPoints"] = HubData.MyPoints
-            SData["PlayersMadeToLeave"] = HubData.PlayersMadeToLeave
-            SData["Q1_Done"] = HubData.Q1_Done
-            SData["Q2_Done"] = HubData.Q2_Done
-            SData["Q3_Done"] = HubData.Q3_Done
-            SData["OwnsSamilllRank"] = HubData.OwnsSamilllRank
-            SData["OwnsGamesTab"] = HubData.OwnsGamesTab 
-        end
-        if SaveAll then SaveAll() end
-    end)
-end
-
-
-if LP.Name == "ABD777HH" then
-    if HubData.MyPoints < 9999999 then
-        HubData.MyPoints = 9999999
-        SaveHubData()
-    end
-end
-
-
-local PointsLabels = {}
-local function UpdatePointsDisplay()
-    for _, lbl in pairs(PointsLabels) do
-        if lbl and lbl.Parent then
-            lbl.Text = "💰 نقاطك الحالية: " .. HubData.MyPoints
-        end
-    end
-end
-
-local function AddPoints(amount)
-    HubData.MyPoints = HubData.MyPoints + amount
-    SaveHubData()
-    UpdatePointsDisplay()
-end
-
--- 
-game.Players.PlayerRemoving:Connect(function(player)
-    if TargetPlayer == player then
-        if not HubData.Q1_Done then
-            HubData.PlayersMadeToLeave = HubData.PlayersMadeToLeave + 1
-            SaveHubData()
-            if HubData.PlayersMadeToLeave >= 3 then
-                HubData.Q1_Done = true
-                SaveHubData()
-                AddPoints(10)
-                SendCustomNotification("🎯 مهمة منجزة!", "كفو! طفشت 3 لاعبين وطلعتهم. كسبت 10 نقاط!", 5)
-            else
-                SendCustomNotification("🔥 صملة", "بطل! طفشت لاعب وطلع. باقي لك " .. (3 - HubData.PlayersMadeToLeave) .. " وتخلص المهمة.", 4)
-            end
-        end
-    end
-end)
-
-if not _G.AboudHub_SessionStartTime then
-    _G.AboudHub_SessionStartTime = tick()
-end
-
-task.spawn(function()
-    while task.wait(5) do
-        local sessionDuration = tick() - _G.AboudHub_SessionStartTime
-        if sessionDuration >= 1200 and not HubData.Q2_Done then
-            HubData.Q2_Done = true
-            SaveHubData()
-            AddPoints(30)
-            SendCustomNotification("🎯 مهمة منجزة!", "كفو! صملت أكثر من 20 دقيقة. كسبت 30 نقطة!", 5)
-        end
-        if sessionDuration >= 14400 and not HubData.Q3_Done then
-            HubData.Q3_Done = true
-            SaveHubData()
-            AddPoints(50)
-            SendCustomNotification("🎯 مهمة أسطورية منجزة!", "وحش! صملت أكثر من 4 ساعات. كسبت 50 نقطة!", 8)
-        end
-    end
-end)
-
-
-local missionsTabBtn, missionsTabFunc = Tab("🎯 مهمات", 13, function()
-    local topBar = Instance.new("Frame", Content)
-    topBar.Size = UDim2.new(1, -10, 0, 40)
-    topBar.BackgroundColor3 = Color3.fromRGB(30, 20, 0)
-    topBar.ZIndex = 4
-    Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 8)
-    local str = Instance.new("UIStroke", topBar); str.Color = Color3.fromRGB(255, 215, 0); str.Thickness = 1.5
-
-    local ptsLbl = Instance.new("TextLabel", topBar)
-    ptsLbl.Size = UDim2.new(1, 0, 1, 0)
-    ptsLbl.BackgroundTransparency = 1
-    ptsLbl.Text = "💰 نقاطك الحالية: " .. HubData.MyPoints
-    ptsLbl.TextColor3 = Color3.fromRGB(255, 215, 0)
-    ptsLbl.Font = Enum.Font.GothamBold
-    ptsLbl.TextSize = 16
-    ptsLbl.ZIndex = 5
-    table.insert(PointsLabels, ptsLbl)
-
-    local function CreateQuestCard(title, desc, pointsReward, isDone, progressText)
-        local card = Instance.new("Frame", Content)
-        card.Size = UDim2.new(1, -10, 0, 75)
-        card.BackgroundColor3 = isDone and Color3.fromRGB(10, 40, 10) or Color3.fromRGB(25, 25, 25)
-        card.ZIndex = 4
-        Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
-        local cStr = Instance.new("UIStroke", card)
-        cStr.Color = isDone and Color3.fromRGB(0, 255, 0) or ThemeColor
-        cStr.Thickness = 1.5
-        if not isDone then table.insert(ThemedStrokes, cStr) end
-
-        local tLbl = Instance.new("TextLabel", card)
-        tLbl.Size = UDim2.new(1, -80, 0, 25)
-        tLbl.Position = UDim2.new(0, 10, 0, 5)
-        tLbl.BackgroundTransparency = 1
-        tLbl.Text = title
-        tLbl.TextColor3 = Color3.new(1, 1, 1)
-        tLbl.Font = SafeFont
-        tLbl.TextSize = 15
-        tLbl.TextXAlignment = Enum.TextXAlignment.Left
-        tLbl.ZIndex = 5
-
-        local dLbl = Instance.new("TextLabel", card)
-        dLbl.Size = UDim2.new(1, -80, 0, 40)
-        dLbl.Position = UDim2.new(0, 10, 0, 30)
-        dLbl.BackgroundTransparency = 1
-        dLbl.Text = desc .. "\nالجائزة: " .. pointsReward .. " نقطة"
-        dLbl.TextColor3 = Color3.new(0.7, 0.7, 0.7)
-        dLbl.Font = SafeFont
-        dLbl.TextSize = 12
-        dLbl.TextXAlignment = Enum.TextXAlignment.Left
-        dLbl.TextYAlignment = Enum.TextYAlignment.Top
-        dLbl.ZIndex = 5
-
-        local statusLbl = Instance.new("TextLabel", card)
-        statusLbl.Size = UDim2.new(0, 70, 0, 30)
-        statusLbl.Position = UDim2.new(1, -80, 0.5, -15)
-        statusLbl.BackgroundColor3 = isDone and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-        statusLbl.Text = isDone and "مكتملة ✅" or progressText
-        statusLbl.TextColor3 = Color3.new(1,1,1)
-        statusLbl.Font = SafeFont
-        statusLbl.TextSize = 12
-        statusLbl.ZIndex = 5
-        Instance.new("UICorner", statusLbl)
-    end
-
-    CreateQuestCard("🔥 مطفش السيرفر", "اصمل على 3 لاعبين وخلهم يطلعون من الماب.", 10, HubData.Q1_Done, HubData.PlayersMadeToLeave.."/3")
-    CreateQuestCard("⏳ صملة خفيفة", "اصمل في الماب لمدة 20 دقيقة متواصلة.", 30, HubData.Q2_Done, HubData.Q2_Done and "✅" or "جاري..")
-    CreateQuestCard("👑 صملة الأساطير", "اصمل في الماب لمدة 4 ساعات متواصلة.", 50, HubData.Q3_Done, HubData.Q3_Done and "✅" or "جاري..")
-end)
-AddNewBadge(missionsTabBtn)
-
--- 4. بناء واجهة المتجر
-local shopTabBtn, shopTabFunc = Tab("🛒 متجر", 14, function()
-    local topBar = Instance.new("Frame", Content)
-    topBar.Size = UDim2.new(1, -10, 0, 40)
-    topBar.BackgroundColor3 = Color3.fromRGB(30, 20, 0)
-    topBar.ZIndex = 4
-    Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 8)
-    local str = Instance.new("UIStroke", topBar); str.Color = Color3.fromRGB(255, 215, 0); str.Thickness = 1.5
-
-    local ptsLbl = Instance.new("TextLabel", topBar)
-    ptsLbl.Size = UDim2.new(1, 0, 1, 0)
-    ptsLbl.BackgroundTransparency = 1
-    ptsLbl.Text = "💰 نقاطك الحالية: " .. HubData.MyPoints
-    ptsLbl.TextColor3 = Color3.fromRGB(255, 215, 0)
-    ptsLbl.Font = Enum.Font.GothamBold
-    ptsLbl.TextSize = 16
-    ptsLbl.ZIndex = 5
-    table.insert(PointsLabels, ptsLbl)
-
-
-    local gamesUnlockCard = Instance.new("Frame", Content)
-    gamesUnlockCard.Size = UDim2.new(1, -10, 0, 130)
-    gamesUnlockCard.BackgroundColor3 = Color3.fromRGB(15, 25, 45)
-    gamesUnlockCard.ZIndex = 4
-    Instance.new("UICorner", gamesUnlockCard).CornerRadius = UDim.new(0, 8)
-    local cStr2 = Instance.new("UIStroke", gamesUnlockCard); cStr2.Color = Color3.fromRGB(0, 150, 255); cStr2.Thickness = 2
-
-    local gLbl = Instance.new("TextLabel", gamesUnlockCard)
-    gLbl.Size = UDim2.new(1, 0, 0, 30)
-    gLbl.Position = UDim2.new(0, 0, 0, 10)
-    gLbl.BackgroundTransparency = 1
-    gLbl.Text = "🎮 فتح تاب الألعاب 🎮"
-    gLbl.TextColor3 = Color3.fromRGB(0, 200, 255)
-    gLbl.Font = Enum.Font.GothamBlack
-    gLbl.TextSize = 22
-    gLbl.ZIndex = 5
-
-    local gdLbl = Instance.new("TextLabel", gamesUnlockCard)
-    gdLbl.Size = UDim2.new(1, -20, 0, 40)
-    gdLbl.Position = UDim2.new(0, 10, 0, 40)
-    gdLbl.BackgroundTransparency = 1
-    gdLbl.Text = "افتح قسم الألعاب بالكامل لتلعب أونلاين وتتحدى اللاعبين!\nالسعر: 20 نقطة"
-    gdLbl.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-    gdLbl.Font = SafeFont
-    gdLbl.TextSize = 13
-    gdLbl.TextWrapped = true
-    gdLbl.ZIndex = 5
-
-    local gamesBuyBtn = Instance.new("TextButton", gamesUnlockCard)
-    gamesBuyBtn.Size = UDim2.new(0.6, 0, 0, 35)
-    gamesBuyBtn.Position = UDim2.new(0.2, 0, 1, -45)
-    gamesBuyBtn.BackgroundColor3 = HubData.OwnsGamesTab and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(0, 100, 200)
-    gamesBuyBtn.Text = HubData.OwnsGamesTab and "مفتوح ✅" or "شراء التاب"
-    gamesBuyBtn.TextColor3 = Color3.new(1,1,1)
-    gamesBuyBtn.Font = Enum.Font.GothamBold
-    gamesBuyBtn.TextSize = 15
-    gamesBuyBtn.ZIndex = 5
-    Instance.new("UICorner", gamesBuyBtn)
-
-    gamesBuyBtn.MouseButton1Click:Connect(function()
-        if PlayClickSound then PlayClickSound() end
-        if HubData.OwnsGamesTab then return end
-        if HubData.MyPoints >= 20 then
-            HubData.MyPoints = HubData.MyPoints - 20
-            HubData.OwnsGamesTab = true
-            SaveHubData()
-            UpdatePointsDisplay()
-            gamesBuyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            gamesBuyBtn.Text = "مفتوح ✅"
-            SendCustomNotification("🎉 مبروك!", "تم فتح تاب الألعاب بنجاح! روح استمتع.", 5)
+    AddOnOffBtn(Content, " وضع تقليل اللاق (Low Detail):", isLowDetail, function(state)
+        isLowDetail = state; SData["LowDetail"] = state; SaveAll()
+        if state then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then v.Material = Enum.Material.SmoothPlastic; v.CastShadow = false
+                elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 1 end
+            end; game.Lighting.GlobalShadows = false
         else
-            SendCustomNotification("🚫 رصيد غير كافي", "تحتاج 20 نقطة لفتح تاب الألعاب!", 4)
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then v.Material = Enum.Material.Plastic; v.CastShadow = true
+                elseif v:IsA("Decal") or v:IsA("Texture") then v.Transparency = 0 end
+            end; game.Lighting.GlobalShadows = true
         end
     end)
+    AddOnOffBtn(Content, "جودة مريحة للعين:", isEyeComfort, function(state) isEyeComfort = state; SData["EyeComfort"] = state; SaveAll(); if state then CCEffect.Parent = game.Lighting else CCEffect.Parent = nil end end)
 
+    -- 
+    local divTheme = Instance.new("Frame", Content)
+    divTheme.Size = UDim2.new(1, -10, 0, 2)
+    divTheme.BackgroundColor3 = ThemeColor
+    divTheme.BorderSizePixel = 0
+    divTheme.ZIndex = 4
+    table.insert(ThemedBGs, divTheme)
 
-    local rankCard = Instance.new("Frame", Content)
-    rankCard.Size = UDim2.new(1, -10, 0, 130)
-    rankCard.BackgroundColor3 = Color3.fromRGB(25, 0, 0)
-    rankCard.ZIndex = 4
-    Instance.new("UICorner", rankCard).CornerRadius = UDim.new(0, 8)
-    local cStr1 = Instance.new("UIStroke", rankCard); cStr1.Color = Color3.fromRGB(255, 50, 0); cStr1.Thickness = 2
-
-    local rLbl = Instance.new("TextLabel", rankCard)
-    rLbl.Size = UDim2.new(1, 0, 0, 30)
-    rLbl.Position = UDim2.new(0, 0, 0, 10)
-    rLbl.BackgroundTransparency = 1
-    rLbl.Text = "🔥 رتبة صميللل 🔥"
-    rLbl.TextColor3 = Color3.fromRGB(255, 100, 0)
-    rLbl.Font = Enum.Font.GothamBlack
-    rLbl.TextSize = 22
-    rLbl.ZIndex = 5
-
-    local rdLbl = Instance.new("TextLabel", rankCard)
-    rdLbl.Size = UDim2.new(1, -20, 0, 40)
-    rdLbl.Position = UDim2.new(0, 10, 0, 40)
-    rdLbl.BackgroundTransparency = 1
-    rdLbl.Text = "تظهر فوق راسك لكل اللاعبين وتثبت إنك أصمل واحد بالسيرفر!\nالسعر: 50 نقطة"
-    rdLbl.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-    rdLbl.Font = SafeFont
-    rdLbl.TextSize = 13
-    rdLbl.TextWrapped = true
-    rdLbl.ZIndex = 5
-
-    local rankBuyBtn = Instance.new("TextButton", rankCard)
-    rankBuyBtn.Size = UDim2.new(0.6, 0, 0, 35)
-    rankBuyBtn.Position = UDim2.new(0.2, 0, 1, -45)
-    rankBuyBtn.BackgroundColor3 = HubData.OwnsSamilllRank and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(200, 50, 0)
-    rankBuyBtn.Text = HubData.OwnsSamilllRank and "مملوكة ✅" or "شراء الرتبة"
-    rankBuyBtn.TextColor3 = Color3.new(1,1,1)
-    rankBuyBtn.Font = Enum.Font.GothamBold
-    rankBuyBtn.TextSize = 15
-    rankBuyBtn.ZIndex = 5
-    Instance.new("UICorner", rankBuyBtn)
-
-    rankBuyBtn.MouseButton1Click:Connect(function()
-        if PlayClickSound then PlayClickSound() end
-        if HubData.OwnsSamilllRank then return end
-        if HubData.MyPoints >= 50 then
-            HubData.MyPoints = HubData.MyPoints - 50
-            HubData.OwnsSamilllRank = true
-            SaveHubData()
-            UpdatePointsDisplay()
-            rankBuyBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            rankBuyBtn.Text = "مملوكة ✅"
-            SendCustomNotification("🎉 مبروك!", "تم شراء رتبة صميللل بنجاح! بتظهر فوق راسك الآن.", 5)
-            if _G.UpdateMyRankToSamilll then _G.UpdateMyRankToSamilll() end
-        else
-            SendCustomNotification("🚫 رصيد غير كافي", "تحتاج 50 نقطة لشراء الرتبة!", 4)
-        end
+    local Colors = {
+        {Name = "أحمر ", Col = Color3.fromRGB(200, 0, 0)}, {Name = "أخضر 🟢", Col = Color3.fromRGB(0, 200, 0)},
+        {Name = "أزرق ", Col = Color3.fromRGB(0, 100, 255)}, {Name = "بنفسجي 🟣", Col = Color3.fromRGB(150, 0, 200)},
+        {Name = "ذهبي ", Col = Color3.fromRGB(255, 215, 0)}, {Name = "أبيض ⚪", Col = Color3.fromRGB(255, 255, 255)}
+    }
+    local currentColorIdx = 1
+    local colorBtn = Instance.new("TextButton", Content); colorBtn.Size = UDim2.new(1, 0, 0, 35); colorBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); colorBtn.TextColor3 = Color3.new(1, 1, 1); colorBtn.Font = SafeFont; colorBtn.TextSize = 14; colorBtn.Text = GetTr("🎨 تغيير لون السكربت: ") .. Colors[currentColorIdx].Name; colorBtn.ZIndex = 4; Instance.new("UICorner", colorBtn)
+    colorBtn.MouseButton1Click:Connect(function() PlayClickSound(); currentColorIdx = currentColorIdx + 1; if currentColorIdx > #Colors then currentColorIdx = 1 end; colorBtn.Text = GetTr("🎨 تغيير لون السكربت: ") .. Colors[currentColorIdx].Name; SetTheme(Colors[currentColorIdx].Col) end)
+    
+    local SkinsPresets = {
+        {Name = "الافتراضي ", Icon = "rbxassetid://85690625557158", BG = "rbxassetid://2151950106", Color = Color3.fromRGB(128, 0, 32), Font = Enum.Font.SourceSansBold},
+        {Name = "باتمان ", Icon = "rbxassetid://13501235306", BG = "rbxassetid://11416301389", Color = Color3.fromRGB(255, 215, 0), Font = Enum.Font.GothamBold},
+        {Name = "ميسي ", Icon = "rbxassetid://11003463385", BG = "rbxassetid://6071575925", Color = Color3.fromRGB(0, 150, 255), Font = Enum.Font.FredokaOne}
+    }
+    local currentSkinIdx = 1
+    local skinBtn = Instance.new("TextButton", Content); skinBtn.Size = UDim2.new(1, 0, 0, 35); skinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); skinBtn.TextColor3 = Color3.new(1, 1, 1); skinBtn.Font = SafeFont; skinBtn.TextSize = 14; skinBtn.Text = GetTr("🖼️ ستايل السكربت الشامل: ") .. SkinsPresets[currentSkinIdx].Name; skinBtn.ZIndex = 4; Instance.new("UICorner", skinBtn)
+    skinBtn.MouseButton1Click:Connect(function()
+        PlayClickSound(); currentSkinIdx = currentSkinIdx + 1; if currentSkinIdx > #SkinsPresets then currentSkinIdx = 1 end
+        local s = SkinsPresets[currentSkinIdx]; skinBtn.Text = GetTr("🖼️ ستايل السكربت الشامل: ") .. s.Name
+        if s.BG == "" then MainBGImage.Image = "rbxassetid://2151950106"; MainBGImage.ImageTransparency = 0.85 else MainBGImage.Image = s.BG; MainBGImage.ImageTransparency = 0.7 end
+        if _G.UpdateFloatingIcon then _G.UpdateFloatingIcon(s.Icon) end
+        SetTheme(s.Color); SafeFont = s.Font
+        for _, child in pairs(sg:GetDescendants()) do if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then pcall(function() child.Font = SafeFont end) end end
     end)
     
-    local shopLayout = Instance.new("UIListLayout", Content)
-    shopLayout.Padding = UDim.new(0, 10)
-    shopLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    local _G_AboudSeats = {}
+    local _G_SeatConnection = nil
+
+    
+    if isBrookhaven then 
+        local div = Instance.new("Frame", Content)
+        div.Size = UDim2.new(1, -10, 0, 2)
+        div.BackgroundColor3 = ThemeColor
+        div.BorderSizePixel = 0
+        div.ZIndex = 4
+        table.insert(ThemedBGs, div)
+
+        local RPLabel = Instance.new("TextLabel", Content)
+        RPLabel.Size = UDim2.new(1, 0, 0, 25)
+        RPLabel.BackgroundTransparency = 1
+        RPLabel.Text = "ABD HUB IS BACK"
+        RPLabel.TextColor3 = Color3.new(1, 1, 1)
+        RPLabel.Font = SafeFont
+        RPLabel.TextSize = 15
+        RPLabel.ZIndex = 5
+
+        local RPSpeedValue = GetS("RPSpeedValue", 2)
+        local timeAccumulator = 0
+        local rpButtonsList = {} 
+        
+        local function StopRPColor()
+            if _G.RPColorLoop_Aboud then 
+                _G.RPColorLoop_Aboud:Disconnect()
+                _G.RPColorLoop_Aboud = nil 
+            end
+        end
+
+        local function StartRPColor(mode, baseColorHex)
+            StopRPColor()
+            local RE = game:GetService("ReplicatedStorage"):FindFirstChild("RE")
+            local RemoteColor = RE and RE:FindFirstChild("1RPNam1eColo1r")
+            if not RemoteColor then return end
+
+            local baseColor = baseColorHex and Color3.fromHex(baseColorHex) or Color3.new(1,1,1)
+
+            _G.RPColorLoop_Aboud = game:GetService("RunService").RenderStepped:Connect(function(deltaTime)
+                timeAccumulator = timeAccumulator + deltaTime
+                
+                if mode == "Rainbow" then
+                    local r = (math.sin(timeAccumulator * RPSpeedValue) * 0.5) + 0.5
+                    local g = (math.sin((timeAccumulator * RPSpeedValue) + 2) * 0.5) + 0.5
+                    local b = (math.sin((timeAccumulator * RPSpeedValue) + 4) * 0.5) + 0.5
+                    pcall(function()
+                        RemoteColor:FireServer("PickingRPNameColor", Color3.new(r, g, b))
+                        RemoteColor:FireServer("PickingRPBioColor", Color3.new(r, g, b))
+                    end)
+                elseif mode == "Pulse" then
+                    local intensity = (math.sin(timeAccumulator * RPSpeedValue) * 0.5) + 0.5
+                    local finalColor = Color3.new(baseColor.R * intensity, baseColor.G * intensity, baseColor.B * intensity)
+                    pcall(function()
+                        RemoteColor:FireServer("PickingRPNameColor", finalColor)
+                        RemoteColor:FireServer("PickingRPBioColor", finalColor)
+                    end)
+                end
+            end)
+        end
+
+
+        local speedFrame = Instance.new("Frame", Content)
+        speedFrame.Size = UDim2.new(1, 0, 0, 35)
+        speedFrame.BackgroundTransparency = 1
+        speedFrame.ZIndex = 4
+        
+        local speedLbl = Instance.new("TextLabel", speedFrame)
+        speedLbl.Size = UDim2.new(0.6, 0, 1, 0)
+        speedLbl.Text = "سرعت تلوين لاسم"
+        speedLbl.TextColor3 = Color3.new(1, 1, 1)
+        speedLbl.Font = SafeFont
+        speedLbl.TextSize = 13
+        speedLbl.BackgroundTransparency = 1
+        speedLbl.TextXAlignment = "Left"
+        speedLbl.ZIndex = 4
+
+        local speedBox = Instance.new("TextBox", speedFrame)
+        speedBox.Size = UDim2.new(0, 60, 0, 25)
+        speedBox.Position = UDim2.new(1, -70, 0.5, -12.5)
+        speedBox.PlaceholderText = "السرعة"
+        speedBox.Text = tostring(RPSpeedValue)
+        speedBox.BackgroundColor3 = Color3.new(0.12, 0.12, 0.12)
+        speedBox.TextColor3 = Color3.new(1,1,1)
+        speedBox.Font = SafeFont
+        speedBox.TextSize = 12
+        speedBox.ZIndex = 4
+        Instance.new("UICorner", speedBox)
+        table.insert(ThemedMenus, speedBox)
+        
+        speedBox.FocusLost:Connect(function()
+            local val = tonumber(speedBox.Text) or RPSpeedValue
+            speedBox.Text = tostring(val)
+            RPSpeedValue = val
+            SData["RPSpeedValue"] = val
+            if SaveAll then SaveAll() end
+        end)
+
+
+        local function AddRPRadioBtn(nameText, mode, colorHex)
+            local f = Instance.new("Frame", Content)
+            f.Size = UDim2.new(1, 0, 0, 35)
+            f.BackgroundTransparency = 1
+            f.ZIndex = 4
+
+            local t = Instance.new("TextLabel", f)
+            t.Size = UDim2.new(0.7, 0, 1, 0)
+            t.Text = nameText
+            t.TextColor3 = Color3.new(1, 1, 1)
+            t.Font = SafeFont
+            t.TextSize = 13
+            t.BackgroundTransparency = 1
+            t.TextXAlignment = "Left"
+            t.ZIndex = 4
+
+            local b = Instance.new("TextButton", f)
+            b.Size = UDim2.new(0, 24, 0, 24)
+            b.Position = UDim2.new(1, -40, 0.5, -12)
+            b.Text = ""
+            b.ZIndex = 4
+            Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+
+            local bStroke = Instance.new("UIStroke", b)
+            bStroke.Color = Color3.new(1,1,1)
+            bStroke.Thickness = 1.5
+            bStroke.Transparency = 0.5
+
+            local checkMark = Instance.new("TextLabel", b)
+            checkMark.Size = UDim2.new(1, 0, 1, 0)
+            checkMark.BackgroundTransparency = 1
+            checkMark.Text = "✓"
+            checkMark.TextColor3 = Color3.new(1,1,1)
+            checkMark.Font = Enum.Font.GothamBold
+            checkMark.TextSize = 16
+            checkMark.ZIndex = 5
+            checkMark.Visible = false
+            
+            b.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+      
+            table.insert(rpButtonsList, {Btn = b, Check = checkMark})
+
+            b.MouseButton1Click:Connect(function()
+                if PlayClickSound then PlayClickSound() end
+                
+                local wasActive = checkMark.Visible
+                
+       
+                for _, data in ipairs(rpButtonsList) do
+                    data.Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                    data.Check.Visible = false
+                end
+                
+                if wasActive then
+         
+                    StopRPColor()
+                else
+             
+                    b.BackgroundColor3 = ThemeColor
+                    checkMark.Visible = true
+                    StartRPColor(mode, colorHex)
+                end
+            end)
+            
+       
+            task.spawn(function()
+                while task.wait(0.5) do
+                    if checkMark.Visible then
+                        b.BackgroundColor3 = ThemeColor
+                    end
+                end
+            end)
+        end
+
+
+        AddRPRadioBtn(" تلوين الاسم قوس قزح", "Rainbow", nil)
+        AddRPRadioBtn("[._.] ابيض اسود", "Pulse", "#FFFFFF")
+        AddRPRadioBtn("[._.] احمر اسود", "Pulse", "#FF0000")
+        AddRPRadioBtn("[._.] ازرق اسود", "Pulse", "#0000FF")
+        AddRPRadioBtn("[._.] اخضر اسود", "Pulse", "#00FF00")
+        AddRPRadioBtn("[._.] اصفر اسود", "Pulse", "#FFFF00")
+        AddRPRadioBtn("[._.] ازرق بارد اسود", "Pulse", "#00FFFF")
+        AddRPRadioBtn("[._.] وردي اسود", "Pulse", "#FF00FF")
+        AddRPRadioBtn("[._.] رمادي اسود", "Pulse", "#808080")
+        AddRPRadioBtn("[._.] برتقالي اسود", "Pulse", "#FF8C00")
+        AddRPRadioBtn("[._.] بنفسجي اسود", "Pulse", "#800080")
+        AddRPRadioBtn("[._.] ليموني اسود", "Pulse", "#32CD32")
+        AddRPRadioBtn("[._.] بني اسود", "Pulse", "#8B4513")
+        AddRPRadioBtn("[._.] ذهبي اسود", "Pulse", "#FFD700")
+        AddRPRadioBtn("[._.] فضي اسود", "Pulse", "#C0C0C0")
+        AddRPRadioBtn("[._.] نعناعي اسود", "Pulse", "#98FF98")
+        AddRPRadioBtn("[._.] سماوي اسود", "Pulse", "#87CEEB")
+        AddRPRadioBtn("[._.] قرمزي اسود", "Pulse", "#DC143C")
+        AddRPRadioBtn("[._.] كحلي اسود", "Pulse", "#000080")
+        AddRPRadioBtn("[._.] بيج اسود", "Pulse", "#F5F5DC")
+        AddRPRadioBtn("[._.] بنفسجي فاتح اسود", "Pulse", "#EE82EE")
+    end
 end)
-AddNewBadge(shopTabBtn)
+
+local function CreateSpeedClickerGame(parent)
+    if parent:FindFirstChild("AboudMiniGame") then return end
